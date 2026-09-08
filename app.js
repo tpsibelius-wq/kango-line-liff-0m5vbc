@@ -802,6 +802,7 @@ function myName(){ return (STATE && (STATE.memberName || (STATE.me && STATE.me.n
 function fillDatalist(names){ var d = $("member_names"); if (!d) return; d.innerHTML = ""; (names || []).forEach(function(n){ var o = document.createElement("option"); o.value = n; d.appendChild(o); }); }
 function myRefUrl(){ return GO_URL + "?src=" + encodeURIComponent("紹介_" + (myName() || "不明").slice(0, 20)); }
 function showMyQr(id){
+  var pv = $("ref_preview"); if (pv) pv.textContent = referralBody() + "\n" + myRefUrl();
   var box = $(id); box.style.display = "block"; box.innerHTML = "";
   if (!((window.SITE_CONFIG || {}).ADD_URL || "")){ // go.html の飛び先が未設定だと QR が使えない
     box.appendChild(el("div", "mic-err", "友だち追加 URL の設定待ちです（担当）。設定が済むと、ここに紹介用の QR が出ます"));
@@ -817,8 +818,13 @@ function showMyQr(id){
   s.onload = draw; s.onerror = function(){ box.textContent = "QRの部品を読み込めませんでした。通信環境を確認して開き直してください"; };
   document.head.appendChild(s);
 }
+function referralBody(){
+  var t = (STATE && STATE.referralText) || "";
+  if (!t || t.indexOf("🏅") === 0) t = "静岡県看護連盟の公式LINEを紹介します。\n現場で困っていることを送ると、連盟がまとめて議員に届けます。研修や意見交換会の案内、処遇や制度の動きも短く届きます。\n登録は無料で、会員でなくても使えます。下のリンクから友だち追加できます。";
+  return t;
+}
 function shareReferral(){
-  var text = ((STATE && STATE.referralText) || "静岡県看護連盟の公式LINEを紹介します。\n現場で困っていることを送ると、連盟がまとめて議員に届けます。研修や意見交換会の案内、処遇や制度の動きも短く届きます。\n登録は無料で、会員でなくても使えます。下のリンクから友だち追加できます。") + "\n" + myRefUrl();
+  var text = referralBody() + "\n" + myRefUrl();
   if (liff.isApiAvailable && liff.isApiAvailable("shareTargetPicker")){
     liff.shareTargetPicker([{ type: "text", text: text }])
       .then(function(res){ if (res) say("紹介文を送りました"); })
@@ -827,7 +833,7 @@ function shareReferral(){
 }
 // 紹介文をその場でコピーする（LINE の外や、共有が使えない端末向け）
 function copyReferral(){
-  copyText(((STATE && STATE.referralText) || "静岡県看護連盟の公式LINEを紹介します。\n現場で困っていることを送ると、連盟がまとめて議員に届けます。研修や意見交換会の案内、処遇や制度の動きも短く届きます。\n登録は無料で、会員でなくても使えます。下のリンクから友だち追加できます。") + "\n" + myRefUrl());
+  copyText(referralBody() + "\n" + myRefUrl());
 }
 
 function copyText(text){
