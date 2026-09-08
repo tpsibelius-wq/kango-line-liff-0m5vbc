@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>静岡県看護連盟 公式LINE 管理画面</title>
+<style>
+  body { font-family: -apple-system, "Hiragino Sans", "Yu Gothic", sans-serif; text-align: center; padding: 48px 16px; color: #333; }
+  a { color: #0098F7; }
+</style>
+</head>
+<body>
+<p id="txt">管理画面を開いています…（初回はLINEログインが出ます）</p>
+<p><a id="lnk" href="#">開かない場合はこちらをタップ</a></p>
+<script src="config.js?v=202609081200"></script>
+<script>
+// PCのブラウザ用の入口。ブックマークはこのページに。管理画面（LIFF）へ転送する
+var LIFF_ID = (window.SITE_CONFIG || {}).LIFF_ID || "";
+if (!LIFF_ID) {
+  document.getElementById("txt").textContent = "設定が未完了です（config.js の LIFF_ID を入れてください）";
+  document.getElementById("lnk").style.display = "none";
+} else {
+  var url = "https://liff.line.me/" + LIFF_ID + "?p=admin" + (location.search ? "&" + location.search.slice(1) : "");
+  document.getElementById("lnk").href = url;
+  location.replace(url);
+}
+</script>
+</body>
+</html>

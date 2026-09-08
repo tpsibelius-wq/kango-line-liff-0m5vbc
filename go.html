@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<!-- JavaScriptが動かない端末向けの保険: 2秒後に友だち追加URLへ。
+     PUT_ADD_URL を config.js の ADD_URL と同じ友だち追加 URL に置き換える（2か所とも） -->
+<meta http-equiv="refresh" content="2;url=PUT_ADD_URL">
+<title>静岡県看護連盟 公式LINE</title>
+<style>
+  body { font-family: -apple-system, "Hiragino Sans", "Yu Gothic", sans-serif; text-align: center; padding: 48px 16px; color: #333; }
+  a { color: #0098F7; }
+</style>
+</head>
+<body>
+<p id="txt">LINEの友だち追加画面を開いています…</p>
+<p><a id="lnk" href="#">開かない場合はこちらをタップ</a></p>
+<script src="config.js?v=202609081200"></script>
+<script>
+// QRの飛び先ページ: どのQRから来たか（src）を記録してから、LINEの友だち追加画面へ転送する
+// ADD_URL = LINE公式アカウントの友だち追加URL（Official Account Manager →「友だちを増やす」に出る短縮リンク）
+var ADD_URL = (window.SITE_CONFIG || {}).ADD_URL || "";
+var API = (window.SITE_CONFIG || {}).API || "";
+
+var src = "";
+try { src = (new URLSearchParams(location.search).get("src") || "").slice(0, 40); } catch (e) {}
+
+if (!ADD_URL) {
+  document.getElementById("txt").textContent = "設定が未完了です（config.js の ADD_URL と、このページの meta refresh に友だち追加URLを入れてください）";
+  document.getElementById("lnk").style.display = "none";
+} else {
+  document.getElementById("lnk").href = ADD_URL;
+  var moved = false;
+  var go = function () { if (moved) return; moved = true; location.replace(ADD_URL); };
+  try {
+    if (API) {
+      fetch(API, { method: "POST", body: JSON.stringify({ action: "liff_entry", src: src, ua: navigator.userAgent }), keepalive: true })
+        .then(go, go);
+    }
+  } catch (e) { go(); }
+  setTimeout(go, 800); // 記録が遅くても0.8秒で転送する
+}
+</script>
+</body>
+</html>

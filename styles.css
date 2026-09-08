@@ -1,0 +1,207 @@
+/* 配色は静岡県看護連盟・日本看護連盟のサイトに合わせる（ロゴの空色とピンク、薄い青の面、白地） */
+:root{
+  --sky:#5ECAFE;       /* ロゴの青。主ボタン、盤面の件数チップ */
+  --blue:#0098F7;      /* リンク、強調文字 */
+  --navy:#005FBD;      /* 濃い青の文字、ヘッダーの文字 */
+  --pink:#EC7BA3;      /* 見出しと下線（連盟サイトと同じ） */
+  --pink-deep:#C24A78; /* ピンクのままで読める濃さ。主要な行動のボタン、小さいピンクの文字 */
+  --pink-logo:#FD7AC0; /* ロゴのピンク。盤面の「変わった」（文字は --ink）*/
+  --panel:#E8F5FF;     /* 薄い青の面 */
+  --panel-pink:#FFF1F6;
+  --bg:#FFFFFF;
+  --ink:#333333;
+  --muted:#6B7280;
+  --line:#DCE7F0;
+}
+/* 書体は M PLUS Rounded 1c（静岡県看護連盟のサイトと同じ）。読み込みは各 HTML の <link>（Google Fonts） */
+body{font-family:"M PLUS Rounded 1c","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI",Meiryo,sans-serif;font-weight:500;line-height:1.6;margin:0;background:var(--bg);color:var(--ink)}
+header{background:#fff;color:var(--navy);padding:10px 16px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:12px;border-bottom:3px solid var(--sky)}
+.hlogo{height:34px;width:auto}
+#wrap{padding:12px;max-width:640px;margin:0 auto}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 4px rgba(0,95,189,.07);margin-bottom:12px;overflow:hidden}
+.card img{width:100%;display:block}
+.cb{padding:12px}
+.t{font-weight:700;font-size:16px;margin-bottom:4px;color:var(--navy)}
+.m{font-size:13px;color:#555;margin-bottom:2px}
+.chip{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;margin-top:6px;margin-right:6px}
+.ok{background:#E8F5E9;color:#2E7D32}
+.ng{background:#eee;color:#777}
+button{border:0;border-radius:8px;font-family:inherit;font-size:14px;font-weight:700;padding:10px 14px;min-height:40px}
+:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
+.tab{background:var(--panel);color:var(--navy);font-size:13px;padding:8px 10px}
+.tab.on{background:var(--navy);color:#fff}
+.vw{display:none}
+.vw.on{display:block}
+.join{background:var(--navy);color:#fff;width:100%;margin-top:8px}
+.cancel{background:none;color:var(--muted);font-size:13px;padding:6px 0;text-decoration:underline}
+.mapbtn{display:inline-block;margin-top:8px;font-size:13px;color:var(--blue);text-decoration:underline}
+label{display:block;font-size:13px;font-weight:700;margin:8px 0 2px}
+label.agree{background:var(--panel-pink);border-radius:10px;padding:10px 12px;font-weight:500;line-height:1.6}
+input,select,textarea{width:100%;box-sizing:border-box;padding:8px;border:1px solid #bbb;border-radius:6px;font-family:inherit;font-size:14px}
+textarea{min-height:72px;resize:vertical;line-height:1.5}
+#formbox,#admin_ui{display:none}
+#admin_ui.shown{display:block}
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,95,189,.07);margin-bottom:12px}
+#send,#a_savebc,#q_send,#v_send{background:var(--pink-deep);color:#fff;width:100%;margin-top:12px}
+#a_save{background:var(--navy);color:#fff;width:100%;margin-top:12px}
+#a_test{background:var(--navy);color:#fff;width:100%;margin-top:12px}
+.join:hover,#send:hover,#a_save:hover,#a_savebc:hover,#a_test:hover,#q_send:hover,#v_send:hover,.tab.on:hover{filter:brightness(.92)}
+h2{font-size:14px;color:var(--pink);margin:16px 0 8px;position:relative;padding-bottom:7px}
+h2::after{content:"";position:absolute;left:0;bottom:0;width:30px;height:3px;border-radius:2px;background:var(--pink)}
+#msg{font-size:13px;color:var(--navy);padding:8px 0;white-space:pre-wrap}
+.hist{font-size:13px;background:var(--panel);border-radius:8px;padding:10px 12px;margin-bottom:6px;line-height:1.6}
+.hint{font-size:13px;color:var(--muted);margin-top:2px}
+#a_prev{display:none !important}
+a.sheet{font-size:13px;color:var(--blue)}
+.apl{display:flex;justify-content:space-between;align-items:center;gap:6px;border-bottom:1px solid var(--line);padding:8px 0;font-size:13px}
+.apl .nm{flex:1;min-width:0}
+.apl .nm small{color:#777;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.apl button{font-size:12px;padding:6px 8px;border-radius:6px;min-height:32px}
+.b_att{background:#2E7D32;color:#fff}
+.b_abs{background:#999;color:#fff}
+.b_clr{background:#eee;color:#333}
+.b_sub{background:var(--panel);color:var(--navy);font-size:12px;padding:6px 10px;margin:4px 4px 0 0}
+.tag{font-size:12px;padding:2px 6px;border-radius:8px;background:#eee;color:#555;white-space:nowrap}
+.tag.att{background:#E8F5E9;color:#2E7D32}
+.tag.abs{background:#eee;color:#777}
+.tag.cxl{background:#FFEBEE;color:#C62828}
+.tag.man{background:#FFF3E0;color:#E65100}
+.sub{background:var(--panel-pink);border-radius:10px;margin-top:14px;padding:10px 12px}
+#toast{position:fixed;left:16px;right:16px;bottom:16px;background:var(--navy);color:#fff;padding:10px 14px;border-radius:10px;font-size:13.5px;box-shadow:0 4px 16px rgba(0,0,0,.25);opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none;z-index:99;white-space:pre-wrap}
+#toast.on{opacity:1;transform:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.todo-h{font-size:13px;font-weight:700;color:var(--navy);margin:10px 0 4px}
+select.asg{width:auto;max-width:160px;padding:4px 6px;font-size:12px;min-height:28px}
+table.roster select.asg{font-size:12.5px}
+table.kv{width:100%;border-collapse:collapse;font-size:13.5px}
+table.kv td{padding:5px 8px;border-top:1px solid var(--line);vertical-align:top;line-height:1.5}
+table.kv tr:first-child td{border-top:0}
+table.kv td:first-child{white-space:nowrap;color:#555;width:34%}
+#cd_info a{color:var(--blue)}
+.chip.btn{cursor:pointer;background:var(--panel);color:var(--navy);margin-top:0}
+.chip.btn.sel{background:var(--navy);color:#fff}
+.tx-grp{padding:10px 12px}
+.tx-row{padding:8px 6px;border-top:1px solid var(--line);cursor:pointer;border-radius:6px}
+.tx-row:first-of-type{border-top:0}
+.tx-row:hover,.tx-row.on{background:var(--panel)}
+.tx-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tx-name{font-weight:700;font-size:14px;color:var(--navy)}
+.tx-arrow{margin-left:auto;color:#999}
+.tx-body{font-size:13px;color:#444;line-height:1.5;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#tx_side .panel{margin-bottom:10px}
+.guide h3{font-size:14px;margin:0 0 6px;color:var(--navy)}
+.guide ol,.guide ul{margin:0 0 6px;padding-left:20px;line-height:1.75;font-size:13.5px}
+.guide li{margin-bottom:2px}
+.guide .kw{background:var(--panel);border-radius:4px;padding:0 4px;font-weight:700}
+.guide .b_sub{margin:6px 6px 0 0}
+/* ---- PC（幅900px以上）: 左に画面の切替、右に内容。イベントは2列、詳細は右の引き出し ---- */
+@media (min-width: 900px) {
+  /* PC: 文字と余白を詰め、1画面に入る量を増やす。入力欄は広く */
+  body{font-size:13.5px}
+  body.admin #wrap{max-width:1440px;padding:12px 20px}
+  #admin_ui.shown{display:grid;grid-template-columns:168px minmax(0,1fr);gap:16px;align-items:start}
+  #admin_ui #tabs{position:sticky;top:10px;flex-direction:column;gap:4px;margin:0}
+  #admin_ui #tabs .tab{text-align:left;padding:8px 10px;font-size:13px;min-height:34px}
+  #admin_ui > section.vw{grid-column:2}
+  #admin_ui > section.vw.on{display:block}
+  #admin_ui > #dbg, #admin_ui > .hint, #admin_ui > #health_banner{grid-column:1 / -1}
+  #toast{left:auto;right:20px;bottom:20px;max-width:380px}
+  #ev_right > #pv_wrap{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,95,189,.07);margin:0 0 12px}
+  #admin_ui > section[data-v="help"].on{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+  #admin_ui > section[data-v="help"] > h2, #admin_ui > section[data-v="help"] > .hint{grid-column:1 / -1}
+  #admin_ui > section[data-v="event"].on{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+  #admin_ui > section[data-v="event"] > h2{grid-column:1 / -1}
+  #admin_ui > section[data-v="event"] > #apl_panel{margin-top:0}
+  #admin_ui > section[data-v="stats"].on{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+  #admin_ui > section[data-v="stats"] > h2, #admin_ui > section[data-v="stats"] > .hint{grid-column:1 / -1}
+  /* 1カラムの画面は読みやすい幅に。入力欄は用途に合う幅に */
+  #admin_ui > section[data-v="todo"], #admin_ui > section[data-v="members"]{max-width:1000px}
+  #admin_ui > section[data-v="texts"].on{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px;align-items:start}
+  #tx_side h2:first-child{margin-top:8px}
+  #tx_side .b_sub{margin:4px 4px 0 0}
+  #admin_ui input:not([type=checkbox]):not([type=file]), #admin_ui select{max-width:560px}
+  #admin_ui input[type=date], #admin_ui input[type=number], #admin_ui input[type=time]{max-width:220px}
+  #admin_ui #a_q, #admin_ui #apl_q{max-width:none}
+  #admin_ui .join, #admin_ui button[style*="width:100%"]{max-width:560px}
+  #a_mmsg{max-width:720px}
+
+  #a_cases, #a_cases_future{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  #a_cases .card, #a_cases_future .card{margin-bottom:0}
+  #a_cases > .todo-h{grid-column:1 / -1;margin:4px 0 0}
+  #case_detail{left:auto;width:640px;box-shadow:-4px 0 16px rgba(0,0,0,.15);border-left:1px solid var(--line);font-size:13.5px}
+  h2{font-size:14px;margin:8px 0 6px}
+  .t{font-size:15px}
+  .m{font-size:13px}
+  .hint{font-size:12px}
+  .panel{padding:12px 14px;margin-bottom:10px}
+  .card{margin-bottom:8px}
+  .cb{padding:10px 12px}
+  .hist{font-size:13px;padding:8px 10px;line-height:1.5}
+  .apl{font-size:13.5px;padding:5px 0}
+  .apl button{font-size:12px;min-height:28px}
+  button{font-size:13px;min-height:32px;padding:7px 12px}
+  .join{margin-top:6px}
+  label{font-size:12.5px;margin:6px 0 2px}
+  input,select,textarea{font-size:13.5px;padding:6px 8px}
+  #a_desc{min-height:200px}
+  #a_msg{min-height:150px}
+  #a_mmsg{min-height:110px}
+  #t_text{min-height:240px}
+  details > summary{padding:4px 0}
+  table.roster{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;font-size:13px}
+  table.roster th{background:var(--panel);color:var(--navy);text-align:left;padding:6px 8px;cursor:pointer;white-space:nowrap;user-select:none}
+  table.roster td{padding:5px 8px;border-top:1px solid var(--line);vertical-align:top}
+  table.roster tr.row:hover{background:var(--panel);cursor:pointer}
+  table.roster th{position:sticky;top:0;z-index:1}
+}
+.print-only{display:none}
+@media print {
+  header, #tabs, button, #msg, #dbg, .hint, #k_target, #toast, #health_banner { display: none !important; }
+  .print-only{display:block;font-weight:700;font-size:16px;margin:0 0 8px}
+  #admin_ui{display:block}
+  .vw.on{display:block}
+  body{background:#fff}
+}
+
+/* ---- 届いた声と動きの盤面（web/voices.js。LIFF の ?v=map と voices.html で使う）---- */
+.vb{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 4px rgba(0,95,189,.07);padding:12px}
+.vb-legend{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+.vb-legend span{display:block}
+.vb-legend .vb-swipe{display:none}
+@media (max-width: 899px){ .vb-legend .vb-swipe{display:block} } /* 狭い画面では表を横に動かして見る */
+.vb-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.vb-grid{display:grid;grid-template-columns:118px repeat(var(--stages,5),minmax(58px,1fr)) 62px;gap:4px;align-items:stretch;min-width:calc(184px + var(--stages,5) * 62px)}
+.vb-th{font-size:11px;color:var(--navy);font-weight:700;text-align:center;padding:4px 2px;line-height:1.3;align-self:end}
+.vb-first{position:sticky;left:0;background:#fff;z-index:1;text-align:left}
+.vb-last{text-align:right}
+.vb-name{background:#fff;border:0;border-top:1px solid var(--line);font-size:12px;font-weight:700;color:var(--navy);text-align:left;padding:8px 6px 8px 0;min-height:38px;line-height:1.35;cursor:pointer;border-radius:0}
+.vb-name.sel{color:var(--pink-deep);box-shadow:inset 3px 0 0 var(--pink-deep);padding-left:6px}
+.vb-cell{border:0;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;min-height:38px;padding:4px 2px;cursor:pointer}
+.vb-cell.on{background:var(--sky);color:var(--ink)}
+.vb-cell.on.vb-goal{background:var(--pink-logo)} /* 右端の「変わった」だけロゴのピンクで目立たせる */
+.vb-cell.few{background:var(--panel);color:var(--navy);font-weight:500;font-size:11px}
+.vb-cell.zero{background:#F4F6F8;color:#C3CAD2;font-weight:500}
+.vb-up{font-size:11px;color:#8a939c;align-self:center;text-align:right;padding-right:2px}
+.vb-stale{display:inline-block;margin-left:6px;background:var(--panel-pink);color:#B04A72;border-radius:8px;padding:1px 6px;font-size:10.5px;font-weight:500;white-space:nowrap}
+.vb-detail{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.vb-dt{font-size:15px;font-weight:700;color:var(--navy)}
+.vb-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.vb-h{font-size:13px;color:var(--pink-deep);margin:14px 0 6px;position:relative;padding-bottom:6px}
+.vb-h::after{content:"";position:absolute;left:0;bottom:0;width:26px;height:3px;border-radius:2px;background:var(--pink)}
+.vb-item{font-size:13px;line-height:1.7;border-top:1px solid var(--line);padding:8px 0}
+.vb-when{font-size:11.5px;color:#8a939c}
+.vb-src{font-size:12px;color:var(--blue)}
+.vb-empty{font-size:12.5px;color:var(--muted);line-height:1.7}
+.vb-foot{font-size:11.5px;color:#8a939c;line-height:1.6;margin-top:14px;border-top:1px solid var(--line);padding-top:8px}
+/* 「私も同じ」ボタンを付けるならこの辺り（.vb-detail の見出しの下）。今回は作っていない */
+@media (min-width: 900px) {
+  /* PC: 盤面を左、押したテーマの中身を右に */
+  .vb{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start;padding:16px}
+  .vb-legend{grid-column:1 / -1}
+  .vb-detail{margin-top:0;border-top:0;border-left:1px solid var(--line);padding:0 0 0 18px}
+  .vb-foot{grid-column:1 / -1}
+  .vb-grid{grid-template-columns:150px repeat(var(--stages,5),minmax(64px,1fr)) 66px;min-width:calc(220px + var(--stages,5) * 68px)}
+  .vb-th{font-size:12px}
+  .vb-name{font-size:13px}
+  .vb-cell{font-size:13px;min-height:42px}
+}

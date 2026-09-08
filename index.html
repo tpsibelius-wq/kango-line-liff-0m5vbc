@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
+<link rel="preload" as="script" href="https://static.line-scdn.net/liff/edge/2/sdk.js">
+<title>静岡県看護連盟 公式LINE</title>
+<link rel="icon" href="assets/favicon.svg"><link rel="apple-touch-icon" href="assets/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700&display=swap">
+<link rel="stylesheet" href="styles.css?v=202609081200">
+</head>
+<body>
+<header id="hdr"><img src="assets/logo.svg" alt="静岡県看護連盟" class="hlogo"><span id="hdr_t">公式LINE</span></header>
+<div id="wrap">
+<div id="msg">読み込み中…</div>
+
+<div id="user_ui">
+  <div id="adminlink" style="display:none;margin-bottom:10px"><button class="join" style="background:var(--navy)" onclick="switchToAdmin()">▶ 管理画面を開く（管理者のみ表示）</button></div>
+  <div id="events"></div>
+  <div id="done" class="panel" style="display:none;border:2px solid #2E7D32">
+    <div class="t" id="done_title" style="color:#2E7D32"></div>
+    <div class="m" id="done_body" style="white-space:pre-wrap;margin-top:6px"></div>
+    <a id="done_cal" class="mapbtn" target="_blank" rel="noopener" style="display:none">📆 Googleカレンダーに追加</a>
+    <button class="join" onclick="closeLiff()">LINEに戻る</button>
+    <button class="cancel" onclick="document.getElementById('done').style.display='none'">この画面を閉じる</button>
+  </div>
+  <div id="formbox" class="panel">
+    <div class="t" id="ftitle"></div>
+    <div class="m" id="ffee"></div>
+    <div id="quick" style="display:none">
+      <div class="hist" style="margin-top:8px">前回の内容で申し込みます：<br><b id="q_summary"></b></div>
+      <label>同伴人数</label>
+      <select id="q_dohan_count"><option value="0">0名（ご本人のみ）</option><option value="1">1名</option><option value="2">2名</option><option value="3">3名</option><option value="4">4名</option><option value="5">5名</option></select>
+      <label>同伴者のお名前（任意）</label><input id="q_dohan">
+      <label>ひとことメモ（任意）</label><input id="q_memo">
+      <label class="agree" style="font-weight:normal"><input type="checkbox" id="q_doui" style="width:auto"> 個人情報の取り扱いに同意します（下の「取り扱いについて」参照）</label>
+      <button id="q_send" class="join" onclick="sendApply(true)">この内容で申し込む</button>
+      <button class="cancel" onclick="showFull()">氏名・連絡先などを修正して申し込む</button>
+    </div>
+    <div id="full">
+      <label>お名前 ※必須</label><input id="f_name" autocomplete="name" enterkeyhint="next">
+      <label>連絡先（電話またはメール）※必須</label><input id="f_contact" autocomplete="tel" enterkeyhint="next" placeholder="090-0000-0000 または メールアドレス">
+      <label>区分 ※必須</label><select id="f_kubun"><option value="">（選択）</option></select>
+      <details id="f_more" style="margin-top:10px"><summary style="font-size:13px;color:var(--blue);padding:6px 0">詳しく入力（任意：職場の種別・きっかけ・紹介者・同伴・メモ）</summary>
+      <label>職場の種別</label><select id="f_shokuba"><option value="">（選択）</option></select>
+      <label>このイベントを知ったきっかけ</label><select id="f_kikkake"><option value="">（選択）</option></select>
+      <label>ご紹介者（いれば）</label><input id="f_shokai" list="member_names"><datalist id="member_names"></datalist>
+      <label>同伴人数</label>
+      <select id="f_dohan_count"><option value="0">0名（ご本人のみ）</option><option value="1">1名</option><option value="2">2名</option><option value="3">3名</option><option value="4">4名</option><option value="5">5名</option></select>
+      <label>同伴者のお名前（任意）</label><input id="f_dohan">
+      <label>ひとことメモ（任意）</label><input id="f_memo">
+      </details>
+      <label class="agree" style="font-weight:normal"><input type="checkbox" id="f_doui" style="width:auto"> 個人情報の取り扱いに同意します（下の「取り扱いについて」参照）</label>
+      <button id="send" onclick="sendApply(false)">この内容で申し込む</button>
+    </div>
+    <details id="policy" style="margin-top:12px;font-size:12px;color:var(--muted)">
+      <summary>個人情報の取り扱いについて（v1 暫定・デモ）</summary>
+      <div style="margin-top:6px;line-height:1.7">
+        ・事業者：静岡県看護連盟（青年部が管理。青年部長・副部長のほか、青年部の担当者が対応のために閲覧します）<br>
+        ・取得する項目：氏名、区分、職場の種別、連絡先、きっかけ、紹介者、同伴者、LINE のユーザーID と表示名、この公式LINEに送られたメッセージ、申込画面を開いた端末の種類<br>
+        ・利用目的：イベントの運営と参加確認、次回イベントや連盟の活動に関するご案内、担当者からの連絡<br>
+        ・保管と委託先：Google（スプレッドシート・自動処理）、Cloudflare（表示を速くするための写しと画像。海外のサーバーを含みます）、LINEヤフー（メッセージの配信）。各社には安全管理のうえ取り扱いを委託し、これ以外の第三者にはご本人の同意なく提供しません<br>
+        ・投票先や支持政党をお尋ねすることはありません<br>
+        ・保持期間：最後のご連絡から2年を目安に、氏名・連絡先などを消して匿名化します（暫定。青年部・事務局の確認後に更新）<br>
+        ・お問い合わせ・内容の確認・削除のご希望：この公式LINEにメッセージをお送りください。担当が対応します<br>
+        ・この文はデモ用の暫定版です。確定した内容は、この画面と申込時の同意欄でお知らせします
+      </div>
+    </details>
+  </div>
+  <h2 id="hist_h">あなたの申込状況</h2><div id="hist"></div>
+  <section id="voice_ui" class="panel" style="display:none">
+    <div class="t">現場の声を聞かせてください</div>
+    <div class="m" style="line-height:1.8">
+      いただいた原文は、連盟の担当だけが読みます。<br>
+      外に出すのは、個人や施設が分からない形にした要約と件数だけです。<br>
+      勤務先の病院・施設や学校に内容を伝えることはありません。<br>
+      お名前・施設名・連絡先は聞きません。
+    </div>
+    <label>区分 ※必須</label><select id="v_kubun"><option value="">（選択）</option></select>
+    <label>職場の種別</label><select id="v_shokuba"><option value="">（選択）</option></select>
+    <label>地域（市町名・任意）</label><input id="v_area" maxlength="20" placeholder="例: 静岡市">
+    <label>テーマ ※必須（いくつでも）</label>
+    <div id="v_themes" class="chips"></div>
+    <label>声 ※必須（2000字まで）</label>
+    <textarea id="v_body" maxlength="2000" placeholder="現場で困っていること、変わってほしいこと。書ける範囲でかまいません"></textarea>
+    <div class="hint" id="v_count">0 / 2000字</div>
+    <label>連盟に望むこと（任意）</label><select id="v_want"><option value="">（選択）</option></select>
+    <div class="sub">
+      <label style="font-weight:normal"><input type="checkbox" id="v_c1" style="width:auto"> ※必須　声を連盟の担当が読み、記録することに同意します</label>
+      <label style="font-weight:normal"><input type="checkbox" id="v_c2" style="width:auto"> 個人や施設が分からない要約と件数を公開してよい</label>
+      <label style="font-weight:normal"><input type="checkbox" id="v_c3" style="width:auto" checked> このテーマの動きを LINE で受け取る</label>
+      <div class="hint">声の取り扱いの版: <span id="v_pv"></span></div>
+    </div>
+    <button id="v_send" class="join" onclick="sendVoice()">この内容で送る</button>
+    <details style="margin-top:12px;font-size:12px;color:var(--muted)">
+      <summary>声の取り扱いについて</summary>
+      <div style="margin-top:6px;line-height:1.7">
+        ・取得する項目：区分、職場の種別、地域、テーマ、声の本文、連盟に望むこと、LINE のユーザーID<br>
+        ・お名前・施設名・連絡先は取得しません<br>
+        ・読む人：静岡県看護連盟 青年部の担当者（原文を読むのはこの範囲だけです）<br>
+        ・公開するもの：担当が書いた要約（個人・施設が分からない形にしたもの）と、テーマごとの件数。公開に同意された声だけが対象です<br>
+        ・件数は、人数が少ないときは伏せて表示します<br>
+        ・勤務先・学校・実習先に、内容や誰が送ったかを伝えることはありません<br>
+        ・保管と委託先：Google（スプレッドシート・自動処理）、LINEヤフー（メッセージの配信）<br>
+        ・「このテーマの動きを LINE で受け取る」に同意された方には、そのテーマに動きがあったときだけお送りします<br>
+        ・保持期間：最後の更新から2年を目安に、本文とユーザーIDを消します（要約は残ります）<br>
+        ・削除のご希望：この公式LINEにメッセージをお送りください。担当が対応します<br>
+        ・この文はデモ用の暫定版です
+      </div>
+    </details>
+    <div id="v_done" class="panel" style="display:none;border:2px solid #2E7D32;margin-top:12px"></div>
+  </section>
+  <section id="map_ui" style="display:none">
+    <div id="vb_wrap"></div>
+  </section>
+  <div class="panel" id="ref_panel" style="margin-top:16px">
+    <h2>この公式LINEを友だちに紹介する</h2>
+    <div class="hint">あなた専用のリンク・QRです。誰の紹介で登録されたかが分かります</div>
+    <button type="button" onclick="shareReferral()">紹介文をLINEで送る</button>
+    <button type="button" onclick="showMyQr('myqr')">自分のQRを表示</button>
+    <div id="myqr" style="display:none;text-align:center;margin-top:10px"></div>
+    <div id="ref_list" style="display:none;margin-top:12px"></div>
+  </div>
+</div>
+
+<div id="admin_ui">
+  <div id="health_banner" style="display:none;background:#FFF3E0;border:1px solid #E65100;color:#7a2e00;border-radius:8px;padding:10px 12px;margin:0 0 10px;font-size:13px;white-space:pre-wrap"></div>
+  <div id="tabs" style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px">
+    <button type="button" class="tab" data-v="todo" onclick="showView('todo')">📌 要対応<span id="nav_todo"></span></button>
+    <button type="button" class="tab" data-v="cases" onclick="showView('cases')">📋 友だち</button>
+    <button type="button" class="tab" data-v="event" onclick="showView('event')">🎪 イベント</button>
+    <button type="button" class="tab" data-v="voices" onclick="showView('voices')">🗣 声<span id="nav_voices"></span></button>
+    <button type="button" class="tab" data-v="members" onclick="showView('members')">👥 会員</button>
+    <button type="button" class="tab" data-v="stats" onclick="showView('stats')">📊 状況・KPI</button>
+    <button type="button" class="tab" data-v="texts" onclick="showView('texts')">✍️ 文面・設定</button>
+    <button type="button" class="tab" data-v="help" onclick="showView('help')">📖 使い方</button>
+  </div>
+  <section class="vw guide" data-v="help">
+  <h2 id="sec_help">📖 使い方</h2>
+  <div class="hint">日々の運用はこの画面と LINE のトークで完結します。迷ったらここへ。印刷用の1枚は <a href="card.html" target="_blank" rel="noopener">運用カード</a></div>
+
+  <div class="panel">
+    <h3>1. 毎日（朝5分）</h3>
+    <ol>
+      <li>朝9時すぎに届く「毎朝のまとめ」を見る（要対応・今日の予定・昨日の数字）</li>
+      <li><span class="kw">📌 要対応</span> を上から。期限が今日か過ぎている人を減らす</li>
+      <li>未加入者からのメッセージへの返信は、LINE公式アカウントの<span class="kw">チャット</span>で（この画面からは送れません）</li>
+    </ol>
+    <button type="button" class="b_sub" onclick="showView('todo')">要対応を開く</button>
+  </div>
+
+  <div class="panel">
+    <h3>2. 「相談」が来たら（当日中）</h3>
+    <ol>
+      <li>要対応に載り、その人の段階が自動で「4 関心あり」になる。<span class="kw">私が対応します</span>を押す（トークで「対応します 番号」でも可）</li>
+      <li>本人には自動で「担当の◯◯です。あらためて連絡します」が届く</li>
+      <li>チャットで：名乗り → お礼 → 聞きたいことを1つ確かめる → 会う提案（意見交換会の見学など）</li>
+      <li>話したら「詳細」に所感をメモ。保留なら次にやること「再連絡」と期限</li>
+    </ol>
+  </div>
+
+  <div class="panel">
+    <h3>3. イベントの前（2〜3週間前）</h3>
+    <ol>
+      <li><span class="kw">🎪 イベント</span> で登録（画像・日時・場所・締切・定員・参加費・地図）</li>
+      <li>「自分にだけテスト送信」で LINE での見え方を確認</li>
+      <li>「保存して今すぐ全員に配信」か、予約配信の日時を入れて保存</li>
+      <li>締切2日前のリマインド・前日リマインド・翌朝の御礼は自動（詳しい設定で切れます）</li>
+    </ol>
+    <button type="button" class="b_sub" onclick="showView('event')">イベントを開く</button>
+  </div>
+
+  <div class="panel">
+    <h3>4. イベント当日</h3>
+    <ol>
+      <li>卓上や出口に QR を置く。自分の紹介 QR は 文面・設定 の「自分のQRを表示」</li>
+      <li>受付で申込者一覧を開き、来た人を<span class="kw">参加</span>に（名前で絞れる）。飛び込みは「申込を手動で追加」</li>
+      <li>21時に当日のまとめが届く。参加者の段階は自動で「3 イベント参加」に</li>
+    </ol>
+  </div>
+
+  <div class="panel">
+    <h3>5. 週1（青年部の前）</h3>
+    <ul>
+      <li>月曜の「週次レポート」を見る</li>
+      <li><span class="kw">📋 友だち</span> で「担当なし」と、更新が30日以上止まっている人（薄い表示）を確認</li>
+      <li>紹介実績と KPI は <span class="kw">📊 状況・KPI</span>。役員会用には「印刷する」</li>
+    </ul>
+    <button type="button" class="b_sub" onclick="showView('cases')">友だちを開く</button>
+    <button type="button" class="b_sub" onclick="showView('stats')">状況・KPI を開く</button>
+  </div>
+
+  <div class="panel">
+    <h3>6. 加入が決まったら</h3>
+    <ol>
+      <li>友だちの詳細で<span class="kw">会員にする</span>（段階が「5 加入」に、本人に歓迎の文面、メニューが会員用に）</li>
+      <li>加入後の会員どうしの連絡は LINE WORKS。事務局から招待してもらう</li>
+      <li>この公式LINEでは、加入後もイベントの案内と紹介の機能が使える</li>
+    </ol>
+  </div>
+
+  <div class="panel">
+    <h3>7. 会員・管理者を増やす</h3>
+    <ul>
+      <li>会員: トークで「会員合言葉」と送ると合言葉が出る。会員は「会員登録 合言葉 氏名」と送る（メニューが会員用になる）</li>
+      <li>管理者: <span class="kw">👥 会員</span> の「管理者を招待」で6桁を出し（トークで「管理者招待」でも可）、相手が「管理者登録 123456」。自分を外すのは「管理者解除」</li>
+      <li>会員を外すのは <span class="kw">👥 会員</span> の「外す」</li>
+    </ul>
+    <button type="button" class="b_sub" onclick="showView('members')">会員を開く</button>
+  </div>
+
+  <div class="panel">
+    <h3>8. 消す・整理する</h3>
+    <ul>
+      <li>連絡しないと決めた人は削除せず、段階を<span class="kw">対象外</span>に（記録と数字が残る）</li>
+      <li>誤登録・テストは 詳細 → その他 → 削除。イベントは読み込んで「このイベントを削除」（申込の記録も消える）</li>
+      <li>保持期間（2年）を過ぎた人は 文面・設定 → 運用 の「保持期間の確認」→「匿名化を実行」</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h3>9. トークで使える言葉（公式LINEのトークに送る）</h3>
+    <ul>
+      <li>使うのは5つだけ: <span class="kw">対応します 番号</span> 担当になる　<span class="kw">状況</span> いまの断面　<span class="kw">まとめ通知</span> 毎朝のまとめを自分に　<span class="kw">管理者登録</span> 管理者メニューを出し直す　<span class="kw">管理ヘルプ 設定</span> 設定と交代の言葉</li>
+      <li>それ以外はこの画面で: 招待と合言葉は 会員、目標は 状況・KPI、点検・バックアップ・保持期間・外形監視は 文面・設定 の運用</li>
+      <li><span class="kw">確認モード 未加入者／会員／解除</span> 自分だけ扱いを切り替えて、未加入者や会員から見た画面・自動応答を確かめる（12時間で自動解除）</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h3>10. PC で使う</h3>
+    <ul>
+      <li>admin.html をブックマーク（初回だけ LINE ログイン）。左のメニューで画面を切り替える</li>
+      <li>「/」キーで検索欄へ、Esc で詳細を閉じる。状況・KPI は「印刷する」で1枚に</li>
+      <li>友だちの詳細は右の引き出しに開く。表の見出しを押すと並べ替え</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h3>11. 困ったとき</h3>
+    <ul>
+      <li>まず 文面・設定 → 運用 の<span class="kw">点検</span>。⚠️ の行に直し方が書いてある</li>
+      <li>画面の上に警告が出たら、自動処理か Cloudflare の異常。運用の「外形監視を今実行」で状態を見る</li>
+      <li>毎朝のまとめが来ない: GAS のトリガーが止まっている可能性。運用の「コード版・最終実行」で最終実行日を確認</li>
+      <li>役員交代・鍵の作り直し・権限の棚卸は「引継ぎパッケージ.md」（README と同じフォルダ）</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h3>12. 言葉の意味</h3>
+    <ul>
+      <li><b>段階</b>: 1 友だち → 2 イベント申込 → 3 イベント参加 → 4 関心あり → 5 加入（対象外は別枠）。1〜4 は自動で進み、5 は「会員にする」で付く</li>
+      <li><b>要対応</b>: 次にやることに期限が付いていて、今日か過ぎている人</li>
+      <li><b>担当</b>: その友だちに連絡する担当。「私が対応します」で自分になる</li>
+      <li><b>きっかけ</b>: どこで接点ができたか（研修・意見交換会・紹介・QR など）。KPI のきっかけ別に出る</li>
+      <li><b>通知の記号</b>: ⚠️重要（すぐ見る）／🎫申込／👤人の動き／📣配信／📋まとめ／🎉加入／💬会話</li>
+    </ul>
+  </div>
+  </section>
+  <section class="vw" data-v="todo">
+  <h2 id="sec_todo">📌 要対応 <span id="todo_count" class="hint" style="font-weight:normal"></span></h2>
+  <div class="hint">期限が今日か過ぎている人が上。「私が対応します」で担当を取り、中身の更新は「詳細」で</div>
+  <div id="todo_scope" class="chips"></div>
+  <div id="a_cases"></div>
+  <details id="todo_future" style="display:none"><summary style="padding:6px 0" id="todo_future_sum">予定</summary><div id="a_cases_future"></div></details>
+  </section>
+  <section class="vw" data-v="event">
+  <h2 id="sec_event">🎪 イベント登録・配信</h2>
+  <div class="panel" id="ev_form">
+    <div class="t">イベント登録・配信</div>
+    <div id="ev_table"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0">
+      <button type="button" onclick="$('a_ev').value=''; adminLoad(); window.scrollTo({top: document.getElementById('a_name').offsetTop - 80, behavior: 'smooth'});" style="background:var(--navy);color:#fff;font-size:13px;padding:8px 12px">＋ 新しいイベント</button>
+      <span id="ev_editing" class="hint"></span>
+      <button type="button" id="ev_copy" class="b_sub" style="display:none;font-size:12px;padding:6px 10px;min-height:30px" onclick="adminCopy()">複製して新規作成</button>
+      <button type="button" id="ev_del" class="b_abs" style="display:none;font-size:12px;padding:6px 10px;min-height:30px" onclick="adminDeleteEvent()">このイベントを削除</button>
+    </div>
+    <select id="a_ev" onchange="adminLoad()" style="display:none"><option value="">（新規作成）</option></select>
+    <label style="font-weight:normal"><input type="checkbox" id="a_showold" style="width:auto" onchange="renderAdmin(STATE)"> 過去のイベントも表示</label>
+    <label>イベント名 ※必須</label><input id="a_name">
+    <div class="hint">読み込んだイベントの名前を変えて保存すると、申込の記録も新しい名前に追随します</div>
+    <label>開催日</label><input id="a_date" type="date">
+    <label>時間</label><input id="a_time" placeholder="19:00〜21:00">
+    <label>場所</label><input id="a_place">
+    <label>案内文</label><textarea id="a_desc"></textarea>
+    <label>申込締切日（空欄=制限なし。開催日を入れると2日前を自動提案）</label><input id="a_deadline" type="date">
+    <label>定員（空欄=制限なし）</label><input id="a_cap" type="number" min="1">
+    <label>参加費（任意）</label><input id="a_fee" placeholder="無料 / 1,000円（当日現金）">
+    <label>地図URL（Googleマップの共有リンク・任意）</label><input id="a_map" placeholder="https://maps.app.goo.gl/...">
+    <label>予約配信（日時を入れて保存すると、その時刻に自動で全員配信）</label>
+    <div style="display:flex;gap:6px"><input id="a_sched" type="datetime-local" style="flex:1"><button type="button" class="b_clr" onclick="document.getElementById('a_sched').value='';" style="white-space:nowrap">取消</button></div>
+    <div class="hint">10分おきにチェックして送信。「今すぐ全員に配信」すると予約は解除されます</div>
+    <label style="font-weight:normal"><input type="checkbox" id="a_active" checked style="width:auto"> 受付中（外すと案内・申込から消えます）</label>
+    <details id="a_more" style="margin-top:10px"><summary style="font-size:13px;color:var(--blue);padding:6px 0">詳しい設定（締切前リマインド・御礼・画像を外す）</summary>
+    <label style="font-weight:normal"><input type="checkbox" id="a_dlremind" style="width:auto"> 締切2日前の朝9時に「まだ間に合います」を全員に自動配信する（通数を1本使います）</label>
+    <label style="font-weight:normal"><input type="checkbox" id="a_thanks" checked style="width:auto"> 参加した人へ翌朝に御礼を自動で送る（文面は「文面」の「御礼」。出欠で「参加」にした人だけ）</label>
+    <label style="font-weight:normal"><input type="checkbox" id="a_rmimg" style="width:auto" onchange="updatePreview()"> 画像なしにする（登録済みの画像を外す）</label>
+    </details>
+    <label>チラシ・画像（任意）</label><input id="a_img" type="file" accept="image/*">
+    <div class="hint">配信カードに載ります（自動で縮小）。見え方はプレビューで確認</div>
+    <img id="a_prev">
+
+    <details open id="pv_wrap" style="margin-top:16px"><summary class="t" style="cursor:pointer">配信カードのプレビュー（LINEでの見え方）</summary>
+    <div id="pv" class="card" style="margin-top:8px;border:1px solid var(--line)">
+      <img id="pv_img" style="display:none;max-height:220px;object-fit:contain;background:var(--panel)">
+      <div class="cb">
+        <div class="t" id="pv_name">（イベント名）</div>
+        <div class="m" id="pv_date">📅 </div>
+        <div class="m" id="pv_place">📍 </div>
+        <div class="m" id="pv_fee" style="display:none"></div>
+        <div class="m" id="pv_rem" style="display:none"></div>
+        <div class="m" id="pv_desc" style="white-space:pre-wrap"></div>
+        <button class="join" disabled style="opacity:.85" id="pv_btn">参加する</button>
+        <button class="join" disabled style="opacity:.85;background:#eee;color:#333;display:none" id="pv_map">地図を開く</button>
+      </div>
+    </div>
+    </details>
+    <button id="a_save" onclick="adminSave('none')">保存する（配信はしない）</button>
+    <button id="a_test" onclick="adminSave('test')">保存して、自分にだけテスト送信する</button>
+    <button id="a_savebc" onclick="adminSave('all')">保存して、今すぐ全員に配信する</button>
+  </div>
+
+  <div id="ev_right">
+  <div class="panel" id="apl_panel" style="display:none">
+    <div class="t" id="apl_title">申込者一覧</div>
+    <div id="apl_stats" class="hint"></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0"><button type="button" class="b_sub" onclick="printRoster()">受付名簿を印刷</button><button type="button" class="b_sub" onclick="showEventQr()">申込QRを表示</button></div>
+    <div id="ev_qr" style="display:none;text-align:center;margin:8px 0"></div>
+    <input id="apl_q" placeholder="名前・区分で絞る（当日の受付用）" oninput="renderApplicants()" style="margin:6px 0">
+    <div class="hint">受付で「参加」に。友だちの段階も自動で進みます</div>
+    <div id="apl_list"></div>
+
+    <div class="sub">
+      <div class="t" style="font-size:14px">申込を手動で追加（電話・口頭・飛び込み＝代理申込）</div>
+      <label>お名前 ※必須</label><input id="m_name">
+      <label>連絡先</label><input id="m_contact">
+      <label>同伴人数</label><select id="m_dohan_count"><option value="0">0名</option><option value="1">1名</option><option value="2">2名</option><option value="3">3名</option><option value="4">4名</option><option value="5">5名</option></select>
+      <details style="margin-top:6px"><summary style="font-size:12px;color:var(--blue);padding:4px 0">詳しく（区分・きっかけ・紹介者・同伴者名・メモ）</summary>
+      <label>区分</label><select id="m_kubun"><option value="">（選択）</option></select>
+      <label>きっかけ</label><select id="m_kikkake"><option value="">（選択）</option></select>
+      <label>ご紹介者</label><input id="m_shokai" list="member_names">
+      <label>同伴者のお名前</label><input id="m_dohan">
+      <label>メモ（受付した担当名など）</label><input id="m_memo">
+      </details>
+      <button type="button" onclick="adminAddApply()" style="background:var(--navy);color:#fff;width:100%;margin-top:8px">この内容で申込を追加する</button>
+    </div>
+
+    <div class="sub">
+      <div class="t" style="font-size:14px">申込者だけに連絡する</div>
+      <div class="hint">変更連絡・御礼・アンケートのお願いなど。キャンセル・欠席の人には送りません。定型文を押してから編集できます</div>
+      <div>
+        <button type="button" class="b_sub" onclick="insertTpl('thanks')">御礼</button>
+        <button type="button" class="b_sub" onclick="insertTpl('change')">変更連絡</button>
+        <button type="button" class="b_sub" onclick="insertTpl('survey')">アンケートのお願い</button>
+        <button type="button" class="b_sub" onclick="insertTpl('remind')">当日のご案内</button>
+      </div>
+      <textarea id="a_msg" placeholder="本文を入力（定型文ボタンで挿入できます）"></textarea>
+      <button id="a_send" onclick="adminMessage()" style="background:var(--navy);color:#fff;width:100%;margin-top:8px">申込者に送信する</button>
+    </div>
+  </div>
+  </div>
+  </section>
+  <section class="vw" data-v="cases">
+  <h2 id="sec_cases">📋 友だち一覧 <button type="button" onclick="openDetail('')" style="font-size:12px;padding:4px 8px;margin-left:8px">＋ 追加</button> <button type="button" onclick="printCases()" style="font-size:12px;padding:4px 8px" title="いまの絞り込みのまま、青年部用の一覧を印刷">一覧を印刷</button></h2>
+  <div class="hint">名簿。名前・区分で検索、段階・担当で絞り込み。行を押すと詳細（見る・更新する）</div>
+  <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap"><input id="a_q" placeholder="名前・区分・担当で検索" oninput="renderAll()" style="flex:2 1 160px"><select id="a_tanto" onchange="renderAll()" style="flex:1 1 120px"><option value="">担当：すべて</option></select><select id="a_stage" onchange="renderAll()" style="flex:1 1 120px"><option value="">全段階</option></select></div>
+  <div id="stage_chips" class="chips"></div>
+  <div id="a_all"></div>
+
+  <div id="case_detail" style="display:none;position:fixed;inset:0;background:#fff;overflow:auto;z-index:50;padding:12px 14px 40px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div id="cd_title" style="font-weight:bold;font-size:16px"></div><button type="button" onclick="closeDetail()" style="font-size:12px;padding:6px 10px">閉じる</button></div>
+    <div id="cd_info" class="hist" style="margin-top:8px"></div>
+    <div class="sub" id="cd_update">
+      <div class="t" style="font-size:14px">更新</div>
+      <label>段階</label><select id="cd_status"></select>
+      <label>担当</label><select id="cd_tanto"><option value="">（担当なし）</option></select>
+      <label>次にやること（空にすると要対応から外れる）</label><input id="cd_next" list="next_presets" placeholder="例: 相談の日程調整">
+      <datalist id="next_presets"><option value="相談の連絡（当日中に1:1で返信）"><option value="1:1で返信（本文は人が書く）"><option value="相談の日時を決める"><option value="意見交換会に誘う"><option value="加入の手続きを案内"><option value="再連絡（本人と約束した時期）"><option value="御礼の連絡"></datalist>
+      <label>期限</label><input id="cd_due" type="date">
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <button type="button" onclick="saveDetail()" style="background:var(--navy);color:#fff;flex:2">保存</button>
+        <button type="button" onclick="detailOp('assign')" class="b_att" style="flex:1">私が対応します</button>
+        <button type="button" onclick="detailOp('done')" style="flex:1">対応済み</button>
+      </div>
+      <label>メモを追記</label><div style="display:flex;gap:6px"><input id="cd_memo" placeholder="所感・次の一手・約束した時期など" style="flex:1"><button type="button" onclick="addMemoDetail()">追記</button></div>
+    </div>
+    <div class="sub" id="cd_new" style="display:none">
+      <div class="t" style="font-size:14px">友だちを追加（イベントなしで会った人・紹介された人）</div>
+      <label>氏名 ※必須</label><input id="n_name">
+      <label>区分</label><select id="n_kubun"><option value="">（選択）</option></select>
+      <label>職場の種別</label><select id="n_shokuba"><option value="">（選択）</option></select>
+      <label>きっかけ</label><select id="n_kikkake"><option value="">（選択）</option></select>
+      <label>紹介者</label><input id="n_shokai" list="member_names">
+      <label>メモ</label><input id="n_memo">
+      <label>次にやること（任意。入れると要対応に載る）</label><input id="n_next" list="next_presets">
+      <label style="font-weight:normal"><input type="checkbox" id="n_self" checked style="width:auto"> 自分を担当にする</label>
+      <button type="button" onclick="adminAddCase(false)" style="background:var(--navy);color:#fff;width:100%;margin-top:8px">友だちを追加する</button>
+    </div>
+    <details id="cd_other" style="margin-top:10px"><summary style="font-weight:bold;padding:6px 0">その他（氏名・属性・会員化・統合・削除）</summary>
+      <div class="sub">
+        <label>氏名</label><input id="cd_name">
+        <label>区分</label><select id="at_kubun"><option value="">（選択）</option></select>
+        <label>職場の種別</label><select id="at_shokuba"><option value="">（選択）</option></select>
+        <label>役職</label><input id="at_yakushoku" placeholder="例: 師長・主任">
+        <label>エリア</label><input id="at_area" placeholder="例: 静岡市">
+        <label>関心</label><select id="at_kanshin"><option value="">（選択）</option></select>
+        <button type="button" onclick="saveOther()" style="background:var(--navy);color:#fff;width:100%;margin-top:8px">氏名・属性を保存</button>
+        <div class="apl" id="cd_actions" style="margin-top:10px"></div>
+      </div>
+    </details>
+  </div>
+  </section>
+  <section class="vw" data-v="voices">
+  <h2 id="sec_voices">🗣 現場の声</h2>
+  <div class="hint">要約・段階・公開は「声」シートで直します（この画面は見るだけ）。週1回、未処理を上から片づけてください</div>
+  <div class="chips" id="v_buckets"></div>
+  <div class="panel">
+    <div class="t">要約の書き方</div>
+    <div class="hint" style="line-height:1.8">
+      1. 氏名・施設名・部署・日付・人数を消す（「◯◯病院の3階病棟」→「ある病院の病棟」）<br>
+      2. 何に困っているかを1文にする（言い換えず、書かれた言葉を残す）<br>
+      3. 断定できないことは書かない（「〜という声」で止める）
+    </div>
+    <a id="v_sheet" class="sheet" target="_blank" rel="noopener">▶ スプレッドシートで直す（「声」シート）</a>
+  </div>
+  <h2>未処理（段階が「届いた」で、公開用要約がまだ）</h2>
+  <div id="v_todo"></div>
+  <h2>テーマ別の件数と鮮度</h2>
+  <div id="v_themes_admin"></div>
+  </section>
+  <section class="vw" data-v="members">
+  <h2 id="sec_members">👥 会員</h2>
+  <div class="hint">会員は友だち一覧に載らず、LINE友だち数の分母からも除きます。会員は公式LINEのトークで「会員登録 合言葉 氏名」と送ると登録されます。会員どうしの連絡は LINE WORKS で行うため、この画面から会員への一斉連絡はできません</div>
+  <div style="margin:4px 0 8px"><button type="button" class="b_sub" onclick="showMemberPass()">会員登録の合言葉を表示</button><button type="button" class="b_sub" onclick="showInvite()">管理者を招待（6桁を表示）</button></div>
+  <pre id="mp_out" class="hist" style="display:none;white-space:pre-wrap;font-family:inherit"></pre>
+  <div id="a_members"></div>
+  </section>
+  <section class="vw" data-v="stats">
+  <div class="print-only" id="print_head"></div>
+  <h2 id="sec_stats">📊 状況 <button type="button" onclick="refreshAdmin()" style="font-size:12px;padding:4px 8px;margin-left:8px">最新に更新</button> <button type="button" onclick="window.print()" style="font-size:12px;padding:4px 8px" title="役員会・青年部向けに1枚で印刷">印刷する</button></h2>
+  <div class="hint">シートを直接直した直後は、表示が最大10分古いことがあります。「最新に更新」でその場で取り直します</div>
+  <div id="a_stats" class="hist"></div>
+
+  <h2 id="sec_kpi">🎯 KPI（目標と進捗）</h2>
+  <div class="hint">必要数は目標×6（友だち一覧・関心あり）と関心あり÷関心化率（LINE友だち）。率は実績で自動更新</div>
+  <div class="sub">
+    <label>今年度の目標（加入人数）</label>
+    <div style="display:flex;gap:8px"><input id="k_target" type="number" min="0" style="flex:1"><button type="button" onclick="saveKpi()" style="background:var(--navy);color:#fff">設定</button></div>
+  </div>
+  <div id="a_kpi" class="hist"></div>
+  </section>
+  <section class="vw" data-v="texts">
+  <div id="tx_main">
+  <h2 id="sec_texts">✍️ 文面</h2>
+  <div class="hint">行を押すとその場で編集できます。保存すると次から新しい文面で送られます</div>
+  <div id="a_texts"></div>
+  <button type="button" onclick="openText('')" style="margin-top:8px">＋ 自動応答を追加（言葉→返信）</button>
+
+  </div>
+  <div id="tx_side">
+  <h2 id="sec_menu">🧭 メニュー</h2>
+  <div class="hint">画像を差し替えたあとに押すと、通常・管理者・会員の3種を作り直します</div>
+  <button type="button" onclick="rebuildMenus()">メニューを作り直す</button>
+
+  <h2 id="sec_ops">🛠 運用（点検・バックアップ・保持期間）</h2>
+  <div class="hint">これまで URL に鍵を付けて開いていた操作。結果は下に出ます。「匿名化」だけは元に戻せないので確認が入ります</div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px">
+    <button type="button" class="b_sub" onclick="adminOps('selfcheck')">点検</button>
+    <button type="button" class="b_sub" onclick="adminOps('version')">コード版・最終実行</button>
+    <button type="button" class="b_sub" onclick="adminOps('backup')">バックアップを今取る</button>
+    <button type="button" class="b_sub" onclick="adminOps('retention_check')">保持期間の確認</button>
+    <button type="button" class="b_sub" onclick="adminOps('retention_purge', '保持期間を過ぎた友だちを匿名化します（氏名・連絡先・LINE_userId・メモ。元に戻せません）。実行しますか？')">匿名化を実行</button>
+    <button type="button" class="b_sub" onclick="adminOps('health_run')">外形監視を今実行</button>
+    <button type="button" class="b_sub" onclick="adminOps('webhook')">Webhook URL を表示</button>
+  </div>
+  <pre id="ops_out" class="hist" style="display:none;white-space:pre-wrap;margin-top:8px;font-family:inherit"></pre>
+
+  <h2 id="sec_ref">📱 自分の紹介QR・紹介文</h2>
+  <div class="panel">
+    <div class="hint">会場では画面のQRを見せる。友人には「紹介文をLINEで送る」</div>
+    <button type="button" onclick="showMyQr('a_myqr')">自分のQRを表示</button>
+    <button type="button" onclick="shareReferral()">紹介文をLINEで送る</button>
+    <div id="a_myqr" style="display:none;text-align:center;margin-top:10px"></div>
+  </div>
+
+  <div><a id="a_sheet" class="sheet" target="_blank" rel="noopener">▶ スプレッドシートを開く（集計・月次）</a></div>
+  </div>
+  </section>
+
+</div>
+<div id="dbg" style="font-size:10px;color:#999;margin-top:20px;word-break:break-all"></div>
+</div>
+<script src="config.js?v=202609081200"></script>
+<script>
+// LINEの部品の読込を待たずに、イベント一覧だけの写し（個人情報なし）を先に取りに行く
+var WORKER = (window.SITE_CONFIG || {}).WORKER || "";
+var PUBLIC_PROMISE = null;
+try {
+  if (WORKER && !/p(?:=|%3D)admin/.test(location.search)) PUBLIC_PROMISE = fetch(WORKER + "/public").then(function(r){ return r.json(); }).catch(function(){ return null; });
+} catch (e) {}
+</script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="voices.js?v=202609081200"></script>
+<script src="app.js?v=202609081200"></script>
+</body>
+</html>
