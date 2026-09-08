@@ -2,7 +2,7 @@
 // 値の取り方は README_デモ手順.md「0. 用意するものと、取った値の貼り先」を参照
 window.SITE_CONFIG = {
   // LINE Developers → LINE Login チャネル → LIFF タブ → 追加した LIFF アプリの「LIFF ID」
-  LIFF_ID: "",
+  LIFF_ID: "2011511250-U8IKfZs3",
   // GAS → デプロイ → ウェブアプリの URL（.../exec）
   API: "https://script.google.com/macros/s/AKfycbx2OsPRFh3snhGZ526DRoGlBugB1-GHQIeffGaQ_1Hh9DCK34nRgtKnrfRjxecjoZYO/exec",
   // Cloudflare Worker の URL（npx wrangler deploy の出力）。使わないなら "" のまま
