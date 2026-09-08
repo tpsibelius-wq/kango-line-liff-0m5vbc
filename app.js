@@ -818,9 +818,7 @@ function showMyQr(id){
   document.head.appendChild(s);
 }
 function shareReferral(){
-  var text = ((STATE && STATE.referralText) || "静岡県看護連盟の公式LINEを紹介します。
-現場で困っていることを送ると、連盟がまとめて議員に届けます。研修や意見交換会の案内、処遇や制度の動きも短く届きます。
-登録は無料で、会員でなくても使えます。下のリンクから友だち追加できます。") + "\n" + myRefUrl();
+  var text = ((STATE && STATE.referralText) || "静岡県看護連盟の公式LINEを紹介します。\n現場で困っていることを送ると、連盟がまとめて議員に届けます。研修や意見交換会の案内、処遇や制度の動きも短く届きます。\n登録は無料で、会員でなくても使えます。下のリンクから友だち追加できます。") + "\n" + myRefUrl();
   if (liff.isApiAvailable && liff.isApiAvailable("shareTargetPicker")){
     liff.shareTargetPicker([{ type: "text", text: text }])
       .then(function(res){ if (res) say("紹介文を送りました"); })
@@ -829,9 +827,7 @@ function shareReferral(){
 }
 // 紹介文をその場でコピーする（LINE の外や、共有が使えない端末向け）
 function copyReferral(){
-  copyText(((STATE && STATE.referralText) || "静岡県看護連盟の公式LINEを紹介します。
-現場で困っていることを送ると、連盟がまとめて議員に届けます。研修や意見交換会の案内、処遇や制度の動きも短く届きます。
-登録は無料で、会員でなくても使えます。下のリンクから友だち追加できます。") + "\n" + myRefUrl());
+  copyText(((STATE && STATE.referralText) || "静岡県看護連盟の公式LINEを紹介します。\n現場で困っていることを送ると、連盟がまとめて議員に届けます。研修や意見交換会の案内、処遇や制度の動きも短く届きます。\n登録は無料で、会員でなくても使えます。下のリンクから友だち追加できます。") + "\n" + myRefUrl());
 }
 
 function copyText(text){
