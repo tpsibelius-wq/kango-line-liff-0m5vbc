@@ -348,8 +348,11 @@ function render(st){
 var MAP_DONE = false;
 var NEWS_DONE = false;
 function applyUserView(st){
-  var v = ["voice", "map", "news", "join"].indexOf(VIEW) >= 0 ? VIEW : "";
-  if (v) ["events", "hist_h", "hist", "ref_panel", "adminlink"].forEach(function(id){ var x = $(id); if (x) x.style.display = "none"; });
+  if (VIEW === "qr") VIEW = "ref"; // 旧「自分のQR」は紹介の画面にまとめた
+  var v = ["voice", "map", "news", "join", "ref"].indexOf(VIEW) >= 0 ? VIEW : "";
+  var hide = ["events", "hist_h", "hist", "adminlink"];
+  if (v && v !== "ref") hide.push("ref_panel");
+  if (v) hide.forEach(function(id){ var x = $(id); if (x) x.style.display = "none"; });
   [["voice_ui", "voice"], ["map_ui", "map"], ["news_ui", "news"], ["join_ui", "join"]].forEach(function(p){
     var x = $(p[0]); if (x) x.style.display = v === p[1] ? "block" : "none";
   });
@@ -365,6 +368,18 @@ function applyUserView(st){
     if (!NEWS_DONE){ NEWS_DONE = true; renderNews($("nw_wrap")); }
   }
   if (v === "join"){ $("hdr_t").textContent = "一緒に活動する・入会"; setupJoinForm(st); }
+  if (v === "ref"){
+    $("hdr_t").textContent = "紹介する";
+    var member = !!st.isMember;
+    $("ref_panel").style.display = member ? "block" : "none";
+    $("ref_guest").style.display = member ? "none" : "block";
+    if (member){
+      showMyQr("myqr");
+      say("あなた専用の QR と紹介文です");
+    } else {
+      say("紹介は連盟会員の機能です");
+    }
+  }
 }
 
 // ---- 現場の声のフォーム（?v=voice）----
@@ -699,9 +714,8 @@ function renderMemberView(st){
   }
   if (VIEW && !VIEW_DONE){
     VIEW_DONE = true;
-    if (VIEW === "qr") showMyQr("myqr");
     if (VIEW === "share") setTimeout(shareReferral, 300);
-    if (VIEW === "voice" || VIEW === "map") return; // 出し分けは applyUserView
+    if (["voice", "map", "news", "join", "ref", "qr"].indexOf(VIEW) >= 0) return; // 出し分けは applyUserView
     if (!st.isMember) return;
     setTimeout(function(){ rp.scrollIntoView({ behavior: "smooth", block: "start" }); }, 100);
   }
@@ -789,6 +803,10 @@ function fillDatalist(names){ var d = $("member_names"); if (!d) return; d.inner
 function myRefUrl(){ return GO_URL + "?src=" + encodeURIComponent("紹介_" + (myName() || "不明").slice(0, 20)); }
 function showMyQr(id){
   var box = $(id); box.style.display = "block"; box.innerHTML = "";
+  if (!((window.SITE_CONFIG || {}).ADD_URL || "")){ // go.html の飛び先が未設定だと QR が使えない
+    box.appendChild(el("div", "mic-err", "友だち追加 URL の設定待ちです（担当）。設定が済むと、ここに紹介用の QR が出ます"));
+    return;
+  }
   var draw = function(){
     brandQr(box, myRefUrl(), 220);
     box.appendChild(el("div", "hint", "静岡県看護連盟 公式LINE 友だち追加（紹介: " + (myName() || "不明") + "）。画面を見せて読み取ってもらってください"));
@@ -807,6 +825,11 @@ function shareReferral(){
       .catch(function(){ copyText(text); });
   } else { copyText(text); }
 }
+// 紹介文をその場でコピーする（LINE の外や、共有が使えない端末向け）
+function copyReferral(){
+  copyText(((STATE && STATE.referralText) || "静岡県看護連盟の公式LINEです。よかったら登録してみてください。") + "\n" + myRefUrl());
+}
+
 function copyText(text){
   var done = function(){ alert("紹介文をコピーしました。送りたいトークに貼り付けてください"); };
   var fallback = function(){ prompt("この文をコピーして送ってください", text); };

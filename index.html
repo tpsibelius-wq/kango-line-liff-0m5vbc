@@ -156,12 +156,16 @@
     <div class="m vlead">公式LINE に届いた現場の声を、テーマごとにまとめています。<br>公開しているのは、個人や施設が分からない形にした要約と件数だけです。</div>
     <div id="vb_wrap"></div>
   </section>
+  <div class="panel" id="ref_guest" style="display:none">
+    <div class="t">紹介は連盟会員の機能です</div>
+    <div class="m" style="line-height:1.8">会員になると、あなた専用の QR と紹介文で仲間を誘えます。<br>会員登録の合言葉は担当からお伝えします。トークに「会員登録 合言葉 お名前」と送ってください。</div>
+  </div>
   <div class="panel" id="ref_panel" style="margin-top:16px">
     <h2>この公式LINEを友だちに紹介する</h2>
     <div class="hint">あなた専用のリンク・QRです。誰の紹介で登録されたかが分かります</div>
-    <button type="button" onclick="shareReferral()">紹介文をLINEで送る</button>
-    <button type="button" onclick="showMyQr('myqr')">自分のQRを表示</button>
-    <div id="myqr" style="display:none;text-align:center;margin-top:10px"></div>
+    <div id="myqr" style="text-align:center;margin-top:6px"></div>
+    <button type="button" class="micbtn" onclick="shareReferral()">LINE で紹介文を送る</button>
+    <button type="button" onclick="copyReferral()">紹介文をコピー</button>
     <div id="ref_list" style="display:none;margin-top:12px"></div>
   </div>
 </div>
