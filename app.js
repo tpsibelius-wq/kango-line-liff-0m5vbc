@@ -1272,6 +1272,70 @@ function renderVoicesAdmin(st){
   th.appendChild(el("div", "hint", "件数が " + v.k + " 件未満のところは、公開の盤面では数を伏せています（VOICE_K）"));
 }
 
+// ---- 管理: 📰最新情報（★ピックアップ／○載せる／×載せない を押して決める）----
+var NW_NOTE_DONE = false;
+function renderNewsAdmin(st){
+  var box = $("nw_admin"); if (!box) return;
+  var v = st.news || { items: [], note: "", lastCollected: "" };
+  if (!NW_NOTE_DONE){ NW_NOTE_DONE = true; $("nw_note").value = v.note || ""; }
+  $("nw_last").textContent = v.lastCollected ? "最終収集 " + String(v.lastCollected).slice(0, 10) : "まだ収集していません";
+  box.innerHTML = "";
+  var group = "";
+  (v.items || []).forEach(function(it){
+    if (it.group !== group){ group = it.group; box.appendChild(el("div", "nwa-g", group || "その他")); }
+    var row = el("div", "nwa" + (it.pick === "★" ? " on" : it.pick === "×" ? " off" : ""));
+    row.dataset.id = it.id;
+    row.appendChild(el("div", "nwa-t", (it.video ? "▶ " : "") + it.title));
+    var meta = el("div", "nwa-m", it.source + "・" + (it.date || ""));
+    if (it.url){ var a = el("a", "nwa-open", "開く"); a.href = it.url; a.target = "_blank"; a.rel = "noopener"; meta.appendChild(a); }
+    row.appendChild(meta);
+    var chips = el("div", "chips");
+    [["★", "★ ピックアップ"], ["○", "○ 載せる"], ["×", "× 載せない"]].forEach(function(p){
+      var c = el("span", "chip btn" + (it.pick === p[0] ? " sel" : ""), p[1]);
+      c.setAttribute("role", "button"); c.tabIndex = 0;
+      c.onclick = function(){ setNewsPick(it.id, p[0]); };
+      chips.appendChild(c);
+    });
+    row.appendChild(chips);
+    box.appendChild(row);
+  });
+  if (!(v.items || []).length) box.appendChild(el("div", "hint", "まだ記事がありません。「いま収集する」を押してください（数十秒かかります）"));
+}
+
+function newsOut(text){ var o = $("nw_out"); o.style.display = "block"; o.textContent = text; }
+
+function setNewsPick(id, value){
+  newsOut("保存中…");
+  api("liff_admin_ops", { op: "news_set", arg: { id: id, value: value } }).then(function(j){
+    newsOut(j.message || "保存しました");
+    var row = $("nw_admin").querySelector('[data-id="' + id + '"]');
+    if (!row) return;
+    row.classList.toggle("on", value === "★");
+    row.classList.toggle("off", value === "×");
+    Array.prototype.forEach.call(row.querySelectorAll(".chip"), function(c){ c.classList.toggle("sel", c.textContent.indexOf(value) === 0); });
+  }).catch(function(e){ newsOut("エラー: " + e.message); });
+}
+
+function saveNewsNote(){
+  newsOut("保存中…");
+  api("liff_admin_ops", { op: "news_note_set", arg: { text: $("nw_note").value } })
+    .then(function(j){ newsOut(j.message || "保存しました"); })
+    .catch(function(e){ newsOut("エラー: " + e.message); });
+}
+
+function newsCollectNow(){
+  newsOut("集めています…（数十秒かかります）");
+  api("liff_admin_ops", { op: "news_collect_now" }).then(function(j){
+    newsOut((j.message || "") + (j.text ? "\n" + j.text : "") + "\n一覧を読み直しています…");
+    refreshAdmin();
+  }).catch(function(e){ newsOut("エラー: " + e.message); });
+}
+
+function openNewsPage(){
+  var id = (window.SITE_CONFIG || {}).LIFF_ID;
+  window.open(id ? "https://liff.line.me/" + id + "?v=news" : "news.html", "_blank");
+}
+
 function showInvite(){
   if (!confirm("管理者の招待コード（6桁・24時間・何人でも）を発行します。よろしいですか？")) return;
   var out = $("mp_out"); out.style.display = "block"; out.textContent = "発行中…";
@@ -1632,11 +1696,12 @@ function renderAdmin(st){
   if (DETAIL_ID) fillDetail(DETAIL_ID);
   renderMembers(st);
   renderVoicesAdmin(st);
+  renderNewsAdmin(st);
   renderKpi(st);
   renderTexts(st);
   renderApplicants();
   if (!VIEW_CUR){
-    VIEW_CUR = { cases: "todo", roster: "cases", kpi: "stats", event: "event", texts: "texts", members: "members", todo: "todo", stats: "stats", voices: "voices", map: "voices" }[VIEW] || "todo";
+    VIEW_CUR = { cases: "todo", roster: "cases", kpi: "stats", event: "event", texts: "texts", members: "members", todo: "todo", stats: "stats", voices: "voices", map: "voices", news: "news" }[VIEW] || "todo";
   }
   showView(VIEW_CUR);
   if (keepY) setTimeout(function(){ window.scrollTo({ top: keepY }); }, 0);

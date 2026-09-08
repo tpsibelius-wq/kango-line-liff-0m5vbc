@@ -179,6 +179,7 @@
     <button type="button" class="tab" data-v="cases" onclick="showView('cases')">📋 友だち</button>
     <button type="button" class="tab" data-v="event" onclick="showView('event')">🎪 イベント</button>
     <button type="button" class="tab" data-v="voices" onclick="showView('voices')">🗣 声<span id="nav_voices"></span></button>
+    <button type="button" class="tab" data-v="news" onclick="showView('news')">📰 最新情報</button>
     <button type="button" class="tab" data-v="members" onclick="showView('members')">👥 会員</button>
     <button type="button" class="tab" data-v="stats" onclick="showView('stats')">📊 状況・KPI</button>
     <button type="button" class="tab" data-v="texts" onclick="showView('texts')">✍️ 文面・設定</button>
@@ -476,6 +477,22 @@
   <div id="v_todo"></div>
   <h2>テーマ別の件数と鮮度</h2>
   <div id="v_themes_admin"></div>
+  </section>
+  <section class="vw" data-v="news">
+  <h2 id="sec_news">📰 最新情報</h2>
+  <div class="hint">★を付けた記事が、公開ページの先頭「今週のピックアップ」に大きく出ます（おすすめは3件まで。4件目からは新しい順に3件だけ出ます）。×にすると出ません。シートの「情報源」で直しても同じです</div>
+  <div class="sub">
+    <label for="nw_note">担当から一言（公開ページの先頭に出ます。空なら出しません）</label>
+    <textarea id="nw_note" rows="2" maxlength="300" placeholder="例: 9/20 の意見交換会、まだ席があります"></textarea>
+    <button type="button" onclick="saveNewsNote()">一言を保存</button>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:10px 0 4px">
+    <button type="button" class="b_sub" onclick="newsCollectNow()">いま収集する</button>
+    <button type="button" class="b_sub" onclick="openNewsPage()">ページを見る</button>
+    <span class="hint" id="nw_last"></span>
+  </div>
+  <pre id="nw_out" class="hist" style="display:none;white-space:pre-wrap;font-family:inherit"></pre>
+  <div id="nw_admin"></div>
   </section>
   <section class="vw" data-v="members">
   <h2 id="sec_members">👥 会員</h2>
