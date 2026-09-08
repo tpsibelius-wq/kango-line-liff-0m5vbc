@@ -4,7 +4,7 @@ window.SITE_CONFIG = {
   // LINE Developers → LINE Login チャネル → LIFF タブ → 追加した LIFF アプリの「LIFF ID」
   LIFF_ID: "",
   // GAS → デプロイ → ウェブアプリの URL（.../exec）
-  API: "https://script.google.com/macros/s/AKfycbzWLufl8n79EG2_gTYBDk8cYBMqYY7QiHBaEfJN9lYZgFwQEurqutcWaZb7uZu21jE/exec",
+  API: "https://script.google.com/macros/s/AKfycbx2OsPRFh3snhGZ526DRoGlBugB1-GHQIeffGaQ_1Hh9DCK34nRgtKnrfRjxecjoZYO/exec",
   // Cloudflare Worker の URL（npx wrangler deploy の出力）。使わないなら "" のまま
   WORKER: "https://kango-line-api.election-dashboard-2026.workers.dev",
   // LINE Official Account Manager →「友だちを増やす」に出る友だち追加 URL（短縮リンク）
