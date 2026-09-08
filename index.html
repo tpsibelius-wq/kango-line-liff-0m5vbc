@@ -74,9 +74,10 @@
   <h2 id="hist_h">あなたの申込状況</h2><div id="hist"></div>
   <section id="voice_ui" class="panel" style="display:none">
     <div class="t">現場の声を聞かせてください</div>
-    <div class="m vlead">話すだけで送れます。<br>原文は連盟の担当だけが読み、公開するのは要約と件数だけです。</div>
+    <div class="m vlead">話すだけで送れます。誤変換はそのままで構いません。<br>原文は連盟の担当だけが読み、公開するのは要約と件数だけです。</div>
 
     <button type="button" id="v_mic" class="micbtn" onclick="toggleVoiceMic()">🎤 話して入力</button>
+    <div class="mic-ok">言い間違いや変換の誤りは、そのままで大丈夫です。前後の文脈から読み取ります。</div>
     <div id="v_mic_err" class="mic-err" style="display:none"></div>
     <div id="v_mic_note" class="mic-help">
       <span class="kb" aria-hidden="true"><span class="kb-row"></span><span class="kb-row"></span><span class="kb-mic">🎤</span></span>
@@ -96,11 +97,13 @@
     <label>区分 ※必須</label>
     <div id="v_kubun" class="chips"></div>
 
+    <label>連盟にどうしてほしいですか（任意）</label>
+    <div id="v_want" class="chips"></div>
+
     <details id="v_more">
       <summary>詳しく書く（任意）</summary>
       <label>職場の種別</label><select id="v_shokuba"><option value="">（選択）</option></select>
       <label>地域（市町名）</label><input id="v_area" maxlength="20" placeholder="例: 静岡市">
-      <label>連盟に望むこと</label><select id="v_want"><option value="">（選択）</option></select>
     </details>
 
     <div class="sub">
@@ -127,6 +130,26 @@
       </div>
     </details>
     <div id="v_done" class="panel" style="display:none;border:2px solid #2E7D32;margin-top:12px"></div>
+  </section>
+  <section id="news_ui" style="display:none">
+    <div class="t">最新情報</div>
+    <div class="m vlead">看護に関わる新しいお知らせを、連盟・協会のサイトから自動で集めています。<br>内容は各サイトでご確認ください。</div>
+    <div id="nw_wrap"></div>
+  </section>
+  <section id="join_ui" class="panel" style="display:none">
+    <div class="t">一緒に活動する・入会</div>
+    <div class="m vlead" id="j_intro"></div>
+    <div id="j_next" class="hist" style="display:none"></div>
+    <label>希望 ※必須</label>
+    <div id="j_want" class="chips"></div>
+    <label>区分 ※必須</label>
+    <div id="j_kubun" class="chips"></div>
+    <label for="j_note">一言（任意・200字まで）</label>
+    <textarea id="j_note" rows="3" maxlength="200" placeholder="聞いてみたいこと、いまの状況など。空でも大丈夫です"></textarea>
+    <label>連絡の希望</label>
+    <div id="j_contact" class="chips"></div>
+    <button id="j_send" class="micbtn" onclick="sendJoin()">送る</button>
+    <div id="j_done" class="panel" style="display:none;border:2px solid #2E7D32;margin-top:12px"></div>
   </section>
   <section id="map_ui" style="display:none">
     <div class="t">届いた声</div>
@@ -521,6 +544,7 @@ try {
 </script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script src="voices.js?v=202609081200"></script>
+<script src="news.js?v=202609081200"></script>
 <script src="app.js?v=202609081200"></script>
 </body>
 </html>

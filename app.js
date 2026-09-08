@@ -35,7 +35,7 @@ function api(action, payload){
   return READY.then(function(){
   var body = Object.assign({ action: action, token: TOKEN }, payload || {});
   // 二重実行防止の合言葉（Worker 経由でも GAS 直接でも同じ値。サーバーが6時間おぼえる）
-  var isWrite = action === "liff_apply" || action === "liff_cancel" || action === "liff_voice" || (action.indexOf("liff_admin_") === 0 && action !== "liff_admin_bootstrap");
+  var isWrite = action === "liff_apply" || action === "liff_cancel" || action === "liff_voice" || action === "liff_join" || (action.indexOf("liff_admin_") === 0 && action !== "liff_admin_bootstrap");
   if (isWrite) body.idem = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   var send = function(url){
     return fetch(url, { method: "POST", body: JSON.stringify(body) })
@@ -346,22 +346,29 @@ function render(st){
 
 // メニューの「現場の声を聞かせてください」（?v=voice）「届いた声と動き」（?v=map）。ふだんの画面を隠して1つだけ出す
 var MAP_DONE = false;
+var NEWS_DONE = false;
 function applyUserView(st){
-  var v = (VIEW === "voice" || VIEW === "map") ? VIEW : "";
+  var v = ["voice", "map", "news", "join"].indexOf(VIEW) >= 0 ? VIEW : "";
   if (v) ["events", "hist_h", "hist", "ref_panel", "adminlink"].forEach(function(id){ var x = $(id); if (x) x.style.display = "none"; });
-  var vu = $("voice_ui"), mu = $("map_ui");
-  if (vu) vu.style.display = v === "voice" ? "block" : "none";
-  if (mu) mu.style.display = v === "map" ? "block" : "none";
+  [["voice_ui", "voice"], ["map_ui", "map"], ["news_ui", "news"], ["join_ui", "join"]].forEach(function(p){
+    var x = $(p[0]); if (x) x.style.display = v === p[1] ? "block" : "none";
+  });
   if (v === "voice"){ $("hdr_t").textContent = "現場の声を聞かせてください"; setupVoiceForm(st); }
   if (v === "map"){
     $("hdr_t").textContent = "届いた声";
     say("テーマごとに、届いた声の件数と要約が見られます");
     if (!MAP_DONE){ MAP_DONE = true; renderVoiceBoard($("vb_wrap")); }
   }
+  if (v === "news"){
+    $("hdr_t").textContent = "最新情報";
+    say("連盟・協会のサイトから自動で集めています");
+    if (!NEWS_DONE){ NEWS_DONE = true; renderNews($("nw_wrap")); }
+  }
+  if (v === "join"){ $("hdr_t").textContent = "一緒に活動する・入会"; setupJoinForm(st); }
 }
 
 // ---- 現場の声のフォーム（?v=voice）----
-var V_THEMES = [], V_AUTO = {}, V_OFF = {}, V_KUBUN = "", V_FORM_DONE = false, V_SUGGEST_T = null;
+var V_THEMES = [], V_AUTO = {}, V_OFF = {}, V_KUBUN = "", V_WANT = "", V_FORM_DONE = false, V_SUGGEST_T = null;
 
 // 押せるチップ（テーマは複数、区分は1つ）
 function chipBox(id, list, onPick){
@@ -391,7 +398,10 @@ function setupVoiceForm(st){
   var cfg = (st && st.voice) || {};
   $("v_pv").textContent = cfg.policyVersion || "（取得できませんでした。開き直してください）";
   fillSelect("v_shokuba", st.shokubaList || [], "");
-  fillSelect("v_want", cfg.wants || [], "");
+  chipBox("v_want", cfg.wants || [], function(v){
+    V_WANT = V_WANT === v ? "" : v;
+    paintChips("v_want", function(x){ return x === V_WANT; });
+  });
   chipBox("v_themes", cfg.themes || [], function(t){
     var i = V_THEMES.indexOf(t);
     if (i >= 0){ V_THEMES.splice(i, 1); delete V_AUTO[t]; V_OFF[t] = true; } // 外したものは自動で選び直さない
@@ -496,7 +506,7 @@ function sendVoice(){
   var cfg = (STATE && STATE.voice) || {};
   if (V_REC_ON) stopVoiceMic();
   var d = { kubun: V_KUBUN, shokuba: $("v_shokuba").value, area: $("v_area").value.trim(),
-            themes: V_THEMES.slice(), body: $("v_body").value.trim(), want: $("v_want").value,
+            themes: V_THEMES.slice(), body: $("v_body").value.trim(), want: V_WANT,
             consentRecord: $("v_c1").checked, consentPublic: $("v_c2").checked, consentReply: $("v_c3").checked,
             policyVersion: cfg.policyVersion || "" };
   if (!d.kubun){ alert("区分を選んでください"); return; }
@@ -518,15 +528,60 @@ function sendVoice(){
   });
 }
 
+// ---- 一緒に活動する（?v=join）----
+var J_WANT = "", J_KUBUN = "", J_CONTACT = "", J_FORM_DONE = false;
+function setupJoinForm(st){
+  if (J_FORM_DONE) return;
+  J_FORM_DONE = true;
+  var cfg = (st && st.join) || {};
+  $("j_intro").textContent = cfg.intro || "";
+  var ev = (st.events || []).filter(function(e){ return e.open; })[0];
+  if (ev){
+    var box = $("j_next"); box.style.display = "block"; box.innerHTML = "";
+    box.appendChild(el("div", "t", "次の予定: " + ev.name));
+    box.appendChild(el("div", "m", "📅 " + ev.date + " " + ev.time + (ev.place ? "　📍 " + ev.place : "")));
+    var b = el("button", "cancel", "このイベントの申込みを見る");
+    b.onclick = function(){ VIEW = ""; TARGET = ev.name; render(STATE); };
+    box.appendChild(b);
+  }
+  chipBox("j_want", cfg.wants || [], function(v){ J_WANT = J_WANT === v ? "" : v; paintChips("j_want", function(x){ return x === J_WANT; }); });
+  chipBox("j_kubun", st.kubunList || [], function(v){ J_KUBUN = J_KUBUN === v ? "" : v; paintChips("j_kubun", function(x){ return x === J_KUBUN; }); });
+  chipBox("j_contact", cfg.contacts || [], function(v){ J_CONTACT = J_CONTACT === v ? "" : v; paintChips("j_contact", function(x){ return x === J_CONTACT; }); });
+  J_CONTACT = (cfg.contacts || [])[0] || "";
+  paintChips("j_contact", function(x){ return x === J_CONTACT; });
+  say("一緒に活動する・入会");
+}
+
+function sendJoin(){
+  if (!J_WANT){ alert("希望を選んでください"); return; }
+  if (!J_KUBUN){ alert("区分を選んでください"); return; }
+  $("j_send").disabled = true;
+  say("送信中…");
+  api("liff_join", { data: { want: J_WANT, kubun: J_KUBUN, note: $("j_note").value.trim(), contact: J_CONTACT } }).then(function(st){
+    $("j_send").disabled = false;
+    render(st);
+    if (st.duplicate){ say(st.message || "この操作は既に受け付けています"); return; }
+    var box = $("j_done"); box.innerHTML = "";
+    box.appendChild(el("div", "t", "ありがとうございます"));
+    box.appendChild(el("div", "m", "担当から LINE でご連絡します（2〜3日以内）。"));
+    box.style.display = "block";
+    box.scrollIntoView({ behavior: "smooth" });
+    J_WANT = ""; $("j_note").value = "";
+    paintChips("j_want", function(){ return false; });
+    say("受け付けました");
+  }).catch(function(e){ $("j_send").disabled = false; say("エラー: " + e.message); });
+}
+
 function showVoiceDone(st){
   var dn = st && st.voiceDone;
   if (!dn) return;
-  V_THEMES = []; V_AUTO = {}; V_OFF = {}; V_KUBUN = "";
+  V_THEMES = []; V_AUTO = {}; V_OFF = {}; V_KUBUN = ""; V_WANT = "";
   $("v_body").value = ""; $("v_area").value = ""; $("v_count").textContent = "0 / 2000字";
   $("v_c1").checked = false; $("v_c2").checked = false;
   $("v_mic_err").style.display = "none"; $("v_mic_note").classList.remove("on");
   paintVoiceThemes();
   paintChips("v_kubun", function(){ return false; });
+  paintChips("v_want", function(){ return false; });
   var box = $("v_done");
   box.innerHTML = "";
   box.appendChild(el("div", "t", "受け取りました（受付番号 " + dn.no + "）"));

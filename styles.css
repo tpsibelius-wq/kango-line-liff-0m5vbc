@@ -182,6 +182,21 @@ table.kv td:first-child{white-space:nowrap;color:#555;width:34%}
 #v_more{margin-top:14px;border-top:1px solid var(--line);padding-top:8px}
 #v_more > summary{font-size:13.5px;font-weight:700;color:var(--navy);cursor:pointer;padding:4px 0}
 
+.mic-ok{font-size:12.5px;color:var(--pink-deep);line-height:1.6;margin:0 0 8px}
+#j_intro{white-space:pre-line} /* 文面シートの改行をそのまま出す */
+
+/* ---- 最新情報（web/news.js。LIFF の ?v=news と news.html で使う）---- */
+.nw{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 4px rgba(0,95,189,.07);padding:12px}
+.nw-note{background:var(--panel-pink);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.7;margin-bottom:6px}
+.nw-h{font-size:13px;color:var(--pink-deep);margin:14px 0 6px;position:relative;padding-bottom:6px}
+.nw-h::after{content:"";position:absolute;left:0;bottom:0;width:26px;height:3px;border-radius:2px;background:var(--pink)}
+.nw-item{font-size:13.5px;line-height:1.7;border-top:1px solid var(--line);padding:8px 0}
+.nw-when{font-size:11.5px;color:#8a939c}
+.nw-title{color:var(--blue);text-decoration:underline}
+.nw-apply{display:inline-block;margin-top:4px;font-size:12.5px;color:var(--blue)}
+.nw-empty{font-size:12.5px;color:var(--muted);line-height:1.7;padding:8px 0}
+.nw-foot{font-size:11.5px;color:#8a939c;line-height:1.6;margin-top:14px;border-top:1px solid var(--line);padding-top:8px}
+
 /* ---- 公開ページ「届いた声」（web/voices.js。LIFF の ?v=map と voices.html で使う）----
    テーマ別の件数だけを見せる。段階（届いた→変わった）は内部の管理用なので出さない */
 .vb{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 4px rgba(0,95,189,.07);padding:12px}
