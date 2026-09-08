@@ -6,7 +6,7 @@ window.SITE_CONFIG = {
   // GAS → デプロイ → ウェブアプリの URL（.../exec）
   API: "https://script.google.com/macros/s/AKfycbxp1Te4WyHKvCSwLFug7I_CB7pd2Nhp4qEKUNzQiODMYZ_TJ24-bVA3iRXmY9uuCjdx/exec",
   // Cloudflare Worker の URL（npx wrangler deploy の出力）。使わないなら "" のまま
-  WORKER: "",
+  WORKER: "https://kango-line-api.election-dashboard-2026.workers.dev",
   // LINE Official Account Manager →「友だちを増やす」に出る友だち追加 URL（短縮リンク）
   ADD_URL: "",
   ORG: "静岡県看護連盟"
