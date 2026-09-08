@@ -74,21 +74,35 @@
   <h2 id="hist_h">あなたの申込状況</h2><div id="hist"></div>
   <section id="voice_ui" class="panel" style="display:none">
     <div class="t">現場の声を聞かせてください</div>
-    <div class="m" style="line-height:1.8">
-      いただいた原文は、連盟の担当だけが読みます。<br>
-      外に出すのは、個人や施設が分からない形にした要約と件数だけです。<br>
-      勤務先の病院・施設や学校に内容を伝えることはありません。<br>
-      お名前・施設名・連絡先は聞きません。
+    <div class="m vlead">話すだけで送れます。<br>原文は連盟の担当だけが読み、公開するのは要約と件数だけです。</div>
+
+    <button type="button" id="v_mic" class="micbtn" onclick="toggleVoiceMic()">🎤 話して入力</button>
+    <div id="v_mic_err" class="mic-err" style="display:none"></div>
+    <div id="v_mic_note" class="mic-help">
+      <span class="kb" aria-hidden="true"><span class="kb-row"></span><span class="kb-row"></span><span class="kb-mic">🎤</span></span>
+      <span>使えないときは、キーボードの<b>マイク（🎤）</b>を押して話してください</span>
     </div>
-    <label>区分 ※必須</label><select id="v_kubun"><option value="">（選択）</option></select>
-    <label>職場の種別</label><select id="v_shokuba"><option value="">（選択）</option></select>
-    <label>地域（市町名・任意）</label><input id="v_area" maxlength="20" placeholder="例: 静岡市">
-    <label>テーマ ※必須（いくつでも）</label>
-    <div id="v_themes" class="chips"></div>
-    <label>声 ※必須（2000字まで）</label>
-    <textarea id="v_body" maxlength="2000" placeholder="現場で困っていること、変わってほしいこと。書ける範囲でかまいません"></textarea>
+    <div id="v_interim" class="interim" style="display:none"></div>
+
+    <label for="v_body">声 ※必須（2000字まで）</label>
+    <textarea id="v_body" rows="5" maxlength="2000" placeholder="現場で困っていること、変わってほしいこと。話した言葉のままで大丈夫です"></textarea>
     <div class="hint" id="v_count">0 / 2000字</div>
-    <label>連盟に望むこと（任意）</label><select id="v_want"><option value="">（選択）</option></select>
+    <div class="hint">入力しにくいときは、箇条書きで大丈夫です。</div>
+
+    <label>テーマ ※必須（いくつでも）</label>
+    <div class="hint">当てはまるものを確認してください（自動で選んだものは外せます）</div>
+    <div id="v_themes" class="chips"></div>
+
+    <label>区分 ※必須</label>
+    <div id="v_kubun" class="chips"></div>
+
+    <details id="v_more">
+      <summary>詳しく書く（任意）</summary>
+      <label>職場の種別</label><select id="v_shokuba"><option value="">（選択）</option></select>
+      <label>地域（市町名）</label><input id="v_area" maxlength="20" placeholder="例: 静岡市">
+      <label>連盟に望むこと</label><select id="v_want"><option value="">（選択）</option></select>
+    </details>
+
     <div class="sub">
       <label style="font-weight:normal"><input type="checkbox" id="v_c1" style="width:auto"> ※必須　声を連盟の担当が読み、記録することに同意します</label>
       <label style="font-weight:normal"><input type="checkbox" id="v_c2" style="width:auto"> 個人や施設が分からない要約と件数を公開してよい</label>

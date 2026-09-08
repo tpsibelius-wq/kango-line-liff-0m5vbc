@@ -163,6 +163,25 @@ table.kv td:first-child{white-space:nowrap;color:#555;width:34%}
   body{background:#fff}
 }
 
+/* ---- 現場の声のフォーム（?v=voice）。マイクのボタンを主役にする ---- */
+.vlead{line-height:1.9;color:var(--ink);margin-bottom:4px}
+.micbtn{display:block;width:100%;background:var(--pink-deep);color:#fff;font-size:16.5px;min-height:54px;margin:12px 0 6px;box-shadow:0 2px 0 rgba(194,74,120,.3)}
+.micbtn.on{background:#fff;color:var(--pink-deep);box-shadow:inset 0 0 0 2px var(--pink-deep);animation:micpulse 1.6s ease-in-out infinite}
+@keyframes micpulse{0%,100%{outline:0 solid rgba(194,74,120,.35)}50%{outline:7px solid rgba(194,74,120,.12)}}
+.mic-err{background:var(--panel-pink);color:var(--pink-deep);border-radius:8px;padding:8px 10px;font-size:12.5px;margin-bottom:6px;line-height:1.6}
+.mic-help{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:10px;padding:8px 10px;font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:8px;opacity:.6}
+.mic-help.on{opacity:1;background:var(--panel-pink);color:var(--ink);box-shadow:inset 0 0 0 2px var(--pink)}
+/* キーボードとマイクの図は CSS だけで描く（画像ファイルを増やさない） */
+.kb{position:relative;flex:0 0 auto;width:54px;height:32px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:5px 6px;box-sizing:border-box}
+.kb-row{display:block;height:5px;border-radius:2px;background:var(--line);margin-bottom:4px}
+.kb-row:last-of-type{width:64%}
+.kb-mic{position:absolute;right:5px;bottom:2px;font-size:12px;line-height:1}
+.interim{background:var(--panel);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--muted);margin-bottom:6px}
+.chip.btn.auto::after{content:"自動";margin-left:6px;font-size:10px;font-weight:500;background:rgba(255,255,255,.4);border-radius:6px;padding:0 4px}
+#voice_ui textarea{min-height:112px}
+#v_more{margin-top:14px;border-top:1px solid var(--line);padding-top:8px}
+#v_more > summary{font-size:13.5px;font-weight:700;color:var(--navy);cursor:pointer;padding:4px 0}
+
 /* ---- 届いた声と動きの盤面（web/voices.js。LIFF の ?v=map と voices.html で使う）---- */
 .vb{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 4px rgba(0,95,189,.07);padding:12px}
 .vb-legend{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px}

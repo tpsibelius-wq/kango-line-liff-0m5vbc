@@ -18,6 +18,19 @@ function showDbg(extra){ var d = $("dbg"); if (!d || !/[?&]dbg=1/.test(location.
 window.onerror = function(m, src, line){ say("エラー: " + m + " (line " + line + ")"); };
 window.addEventListener("unhandledrejection", function(ev){ say("Promiseエラー: " + (ev.reason && ev.reason.message ? ev.reason.message : ev.reason)); });
 
+// 本文の語からテーマを仮に選ぶための対応表。key はテーマ名に含まれる語（テーマ名そのものは cfg.themes から受ける）
+var VOICE_THEME_HINTS = [
+  { key: "夜勤",         words: ["夜勤", "シフト", "休み", "有休", "有給"] },
+  { key: "処遇",         words: ["給料", "給与", "手当", "賃上げ", "ベースアップ"] },
+  { key: "人員配置",     words: ["人手", "人員", "忙し", "残業", "業務量"] },
+  { key: "子育て",       words: ["子ども", "子供", "育児", "介護", "保育"] },
+  { key: "教育",         words: ["研修", "資格", "キャリア", "教育"] },
+  { key: "ハラスメント", words: ["ハラスメント", "パワハラ", "暴言", "セクハラ"] },
+  { key: "ICT",          words: ["電子カルテ", "ICT", "DX", "システム", "タスク"] },
+  { key: "地域",         words: ["訪問", "在宅", "地域"] },
+  { key: "制度",         words: ["制度", "法律", "届出"] },
+];
+
 function api(action, payload){
   return READY.then(function(){
   var body = Object.assign({ action: action, token: TOKEN }, payload || {});
@@ -348,35 +361,141 @@ function applyUserView(st){
 }
 
 // ---- 現場の声のフォーム（?v=voice）----
-var V_THEMES = [], V_FORM_DONE = false;
+var V_THEMES = [], V_AUTO = {}, V_OFF = {}, V_KUBUN = "", V_FORM_DONE = false, V_SUGGEST_T = null;
+
+// 押せるチップ（テーマは複数、区分は1つ）
+function chipBox(id, list, onPick){
+  var box = $(id); box.innerHTML = "";
+  (list || []).forEach(function(v){
+    var c = el("span", "chip btn", v);
+    c.setAttribute("role", "button"); c.tabIndex = 0;
+    c.dataset.v = v;
+    var pick = function(){ onPick(v); };
+    c.onclick = pick;
+    c.onkeydown = function(ev){ if (ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); pick(); } };
+    box.appendChild(c);
+  });
+}
+function paintChips(id, isOn, isAuto){
+  Array.prototype.forEach.call($(id).querySelectorAll(".chip"), function(c){
+    var v = c.dataset.v;
+    c.classList.toggle("sel", isOn(v));
+    c.classList.toggle("auto", !!(isAuto && isAuto(v)));
+  });
+}
+function paintVoiceThemes(){ paintChips("v_themes", function(t){ return V_THEMES.indexOf(t) >= 0; }, function(t){ return V_AUTO[t]; }); }
+
 function setupVoiceForm(st){
   if (V_FORM_DONE) return; // 作るのは1回だけ（送信のあとの再描画で選んだテーマが消えないように）
   V_FORM_DONE = true;
   var cfg = (st && st.voice) || {};
   $("v_pv").textContent = cfg.policyVersion || "（取得できませんでした。開き直してください）";
-  fillSelect("v_kubun", st.kubunList || [], "");
   fillSelect("v_shokuba", st.shokubaList || [], "");
   fillSelect("v_want", cfg.wants || [], "");
-  var box = $("v_themes"); box.innerHTML = "";
-  (cfg.themes || []).forEach(function(t){
-    var c = el("span", "chip btn", t);
-    c.setAttribute("role", "button"); c.tabIndex = 0;
-    var toggle = function(){
-      var i = V_THEMES.indexOf(t);
-      if (i >= 0) V_THEMES.splice(i, 1); else V_THEMES.push(t);
-      c.classList.toggle("sel", V_THEMES.indexOf(t) >= 0);
-    };
-    c.onclick = toggle;
-    c.onkeydown = function(ev){ if (ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); toggle(); } };
-    box.appendChild(c);
+  chipBox("v_themes", cfg.themes || [], function(t){
+    var i = V_THEMES.indexOf(t);
+    if (i >= 0){ V_THEMES.splice(i, 1); delete V_AUTO[t]; V_OFF[t] = true; } // 外したものは自動で選び直さない
+    else { V_THEMES.push(t); delete V_AUTO[t]; delete V_OFF[t]; }
+    paintVoiceThemes();
   });
-  $("v_body").addEventListener("input", function(){ $("v_count").textContent = $("v_body").value.length + " / 2000字"; });
+  chipBox("v_kubun", st.kubunList || [], function(v){
+    V_KUBUN = V_KUBUN === v ? "" : v;
+    paintChips("v_kubun", function(x){ return x === V_KUBUN; });
+  });
+  var ta = $("v_body");
+  ta.addEventListener("input", function(){
+    $("v_count").textContent = ta.value.length + " / 2000字";
+    clearTimeout(V_SUGGEST_T);
+    V_SUGGEST_T = setTimeout(suggestVoiceThemes, 1500); // 打ち終わったころに候補を出す
+  });
+  ta.addEventListener("change", suggestVoiceThemes);
   say("現場の声を聞かせてください");
+}
+
+// 本文の語からテーマを仮に選ぶ。すでに選ばれているもの・利用者が外したものは触らない
+function suggestVoiceThemes(){
+  clearTimeout(V_SUGGEST_T);
+  var text = $("v_body").value || "";
+  if (!text) return;
+  var themes = ((STATE && STATE.voice) || {}).themes || [];
+  var added = false;
+  VOICE_THEME_HINTS.forEach(function(h){
+    if (!h.words.some(function(w){ return text.indexOf(w) >= 0; })) return;
+    var t = themes.filter(function(x){ return x.indexOf(h.key) >= 0; })[0];
+    if (!t || V_THEMES.indexOf(t) >= 0 || V_OFF[t]) return;
+    V_THEMES.push(t); V_AUTO[t] = true; added = true;
+  });
+  if (added) paintVoiceThemes();
+}
+
+// ---- 音声入力。使える端末はその場で認識し、使えない端末はキーボードのマイクへ案内する ----
+var V_REC = null, V_REC_ON = false;
+function speechCtor(){ return window.SpeechRecognition || window.webkitSpeechRecognition || null; }
+
+function appendVoiceText(t){
+  var ta = $("v_body");
+  var s = String(t || "").trim();
+  if (!s) return;
+  ta.value = ta.value ? ta.value.replace(/\s*$/, "") + "\n" + s : s;
+  $("v_count").textContent = ta.value.length + " / 2000字";
+}
+function micButton(on){
+  var b = $("v_mic");
+  b.classList.toggle("on", on);
+  b.textContent = on ? "● 聞いています… 押すと止める" : "🎤 話して入力";
+}
+function micError(msg){
+  var e = $("v_mic_err"); e.textContent = msg; e.style.display = "block";
+  $("v_mic_note").classList.add("on");
+  stopVoiceMic();
+}
+function stopVoiceMic(){
+  V_REC_ON = false;
+  if (V_REC){ try { V_REC.stop(); } catch (e) {} }
+  micButton(false);
+  $("v_interim").style.display = "none"; $("v_interim").textContent = "";
+  suggestVoiceThemes();
+}
+
+function toggleVoiceMic(){
+  var C = speechCtor();
+  if (!C){ // iOS の LINE など。キーボードのマイクに案内する
+    $("v_mic_note").classList.add("on");
+    $("v_body").focus();
+    return;
+  }
+  if (V_REC_ON){ stopVoiceMic(); return; }
+  try { V_REC = new C(); } catch (e) { micError("この端末では音声入力を使えませんでした。下の方法でお願いします"); return; }
+  V_REC.lang = "ja-JP"; V_REC.interimResults = true; V_REC.continuous = true;
+  V_REC.onresult = function(ev){
+    var fixed = "", interim = "";
+    for (var i = ev.resultIndex; i < ev.results.length; i++){
+      var r = ev.results[i];
+      if (r.isFinal) fixed += r[0].transcript; else interim += r[0].transcript;
+    }
+    if (fixed) appendVoiceText(fixed);
+    var box = $("v_interim");
+    box.textContent = interim;
+    box.style.display = interim ? "block" : "none";
+  };
+  V_REC.onerror = function(ev){
+    var kind = ev && ev.error;
+    micError(kind === "not-allowed" || kind === "service-not-allowed"
+      ? "マイクの使用が許可されませんでした。下の方法でお願いします"
+      : "音声入力が止まりました。もう一度押すか、下の方法でお願いします");
+  };
+  V_REC.onend = function(){ if (V_REC_ON) stopVoiceMic(); }; // 無音で終わったとき
+  try { V_REC.start(); } catch (e) { micError("音声入力を始められませんでした。下の方法でお願いします"); return; }
+  V_REC_ON = true;
+  micButton(true);
+  $("v_mic_err").style.display = "none";
+  $("v_mic_note").classList.remove("on");
 }
 
 function sendVoice(){
   var cfg = (STATE && STATE.voice) || {};
-  var d = { kubun: $("v_kubun").value, shokuba: $("v_shokuba").value, area: $("v_area").value.trim(),
+  if (V_REC_ON) stopVoiceMic();
+  var d = { kubun: V_KUBUN, shokuba: $("v_shokuba").value, area: $("v_area").value.trim(),
             themes: V_THEMES.slice(), body: $("v_body").value.trim(), want: $("v_want").value,
             consentRecord: $("v_c1").checked, consentPublic: $("v_c2").checked, consentReply: $("v_c3").checked,
             policyVersion: cfg.policyVersion || "" };
@@ -402,10 +521,12 @@ function sendVoice(){
 function showVoiceDone(st){
   var dn = st && st.voiceDone;
   if (!dn) return;
-  V_THEMES = [];
+  V_THEMES = []; V_AUTO = {}; V_OFF = {}; V_KUBUN = "";
   $("v_body").value = ""; $("v_area").value = ""; $("v_count").textContent = "0 / 2000字";
   $("v_c1").checked = false; $("v_c2").checked = false;
-  Array.prototype.forEach.call(document.querySelectorAll("#v_themes .chip"), function(c){ c.classList.remove("sel"); });
+  $("v_mic_err").style.display = "none"; $("v_mic_note").classList.remove("on");
+  paintVoiceThemes();
+  paintChips("v_kubun", function(){ return false; });
   var box = $("v_done");
   box.innerHTML = "";
   box.appendChild(el("div", "t", "受け取りました（受付番号 " + dn.no + "）"));
