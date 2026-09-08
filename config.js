@@ -8,6 +8,6 @@ window.SITE_CONFIG = {
   // Cloudflare Worker の URL（npx wrangler deploy の出力）。使わないなら "" のまま
   WORKER: "https://kango-line-api.election-dashboard-2026.workers.dev",
   // LINE Official Account Manager →「友だちを増やす」に出る友だち追加 URL（短縮リンク）
-  ADD_URL: "",
+  ADD_URL: "https://lin.ee/W7DXg2z",
   ORG: "静岡県看護連盟"
 };
