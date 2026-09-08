@@ -30,11 +30,11 @@
   }
 
   // 外から来たリンクは https のものだけ開く（画面側でももう一度確かめる）
-  function linkRow(item) {
+  function linkRow(item, video) {
     var row = elm("div", "nw-item");
     row.appendChild(elm("div", "nw-when", jpDay(item.date)));
     if (/^https:\/\//i.test(String(item.url || ""))) {
-      var a = elm("a", "nw-title", item.title);
+      var a = elm("a", "nw-title", (video ? "▶ " : "") + item.title); // 動画は YouTube だと分かるように
       a.href = item.url; a.target = "_blank"; a.rel = "noopener";
       row.appendChild(a);
     } else {
@@ -64,9 +64,20 @@
       });
     }
 
+    // 出典はグループ（連盟・協会の新着／組織内候補の議員から／連盟・協会の動画／厚労省）ごとにまとめる
+    var groups = [];
     (data.sections || []).forEach(function (s) {
-      wrap.appendChild(elm("h3", "nw-h", s.source));
-      (s.items || []).forEach(function (it) { wrap.appendChild(linkRow(it)); });
+      var name = s.group || "";
+      var g = groups.filter(function (x) { return x.name === name; })[0];
+      if (!g) { g = { name: name, list: [] }; groups.push(g); }
+      g.list.push(s);
+    });
+    groups.forEach(function (g) {
+      if (g.name) wrap.appendChild(elm("h3", "nw-h", g.name));
+      g.list.forEach(function (s) {
+        wrap.appendChild(elm("div", "nw-src", s.source));
+        (s.items || []).forEach(function (it) { wrap.appendChild(linkRow(it, s.video)); });
+      });
     });
     if (!(data.sections || []).length) {
       wrap.appendChild(elm("div", "nw-empty", "いまは新しい記事がありません。次の収集（毎週月曜の朝）をお待ちください"));
