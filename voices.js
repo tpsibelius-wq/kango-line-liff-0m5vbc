@@ -1,4 +1,5 @@
-// 「届いた声と動き」の盤面。LIFF の中（index.html の ?v=map）と、LINEの外から見る voices.html の両方が読む。
+// 公開ページ「届いた声」。LIFF の中（index.html の ?v=map）と、LINEの外から見る voices.html の両方が読む。
+// 見せるのは「どんな声がどれだけ届いているか」だけ。段階（届いた→変わった）は内部の管理用なので出さない。
 // データは GAS の ?action=voice_public（鍵なし・要約と件数だけ）。window.VOICE_SAMPLE があればそれを使う（ローカルでの見た目確認）
 (function (global) {
   "use strict";
@@ -12,27 +13,22 @@
     return x;
   }
 
-  // 件数を伏せているテーマは月までしか来ない（yyyy-MM）。日付が来たときだけ M/d で出す
   function jpDay(ymd) {
     var d = String(ymd || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (d) return Number(d[2]) + "/" + Number(d[3]);
-    var m = String(ymd || "").match(/^(\d{4})-(\d{2})$/);
-    return m ? Number(m[2]) + "月" : String(ymd || "");
+    return d ? Number(d[2]) + "/" + Number(d[3]) : String(ymd || "");
   }
   function jpMonth(ym) {
     var m = String(ym || "").match(/^(\d{4})-(\d{2})$/);
     return m ? m[1] + "年" + Number(m[2]) + "月" : "";
   }
 
-  // 件数のセル。0＝まだ届いていない、"<K"＝人数が少ないので数は出さない
-  function cellText(v, k) {
+  // 件数の表示。"<K" は人数が少ないので数を出さない
+  function countText(v, k) {
     if (v === "<K") return k + "件未満";
-    return String(v || 0);
+    return (Number(v) || 0) + "件";
   }
-  function cellClass(v) {
-    if (v === "<K") return "vb-cell few";
-    return Number(v) > 0 ? "vb-cell on" : "vb-cell zero";
-  }
+  // 並べ替えと横棒の長さに使う数。"<K" は 0 と実数の間に置く
+  function countNum(v) { return v === "<K" ? 0.5 : (Number(v) || 0); }
 
   // Cloudflare の写し（/voices）を先に読み、無い・読めないときは GAS から直接
   function loadPublic() {
@@ -55,43 +51,46 @@
     mount.innerHTML = "";
     var wrap = elm("div", "vb");
 
-    var head = elm("div", "vb-legend");
-    head.appendChild(elm("span", "", "縦が声のテーマ、横がその後の進み方です。"));
-    head.appendChild(elm("span", "", "人数が" + data.k + "人に満たないところは、書いた人が分からないように件数を伏せています。"));
-    head.appendChild(elm("span", "vb-swipe", "表は横に動かすと、右端の「変わった」と最終更新まで見られます。"));
-    wrap.appendChild(head);
+    wrap.appendChild(elm("div", "vb-legend",
+      "件数が" + data.k + "件に満たないテーマは、書いた人が分からないように数を伏せています。"));
 
-    var scroll = elm("div", "vb-scroll");
-    var grid = elm("div", "vb-grid");
-    grid.style.setProperty("--stages", String((data.stages || []).length));
-    grid.appendChild(elm("div", "vb-th vb-first", "テーマ"));
-    (data.stages || []).forEach(function (s) { grid.appendChild(elm("div", "vb-th", s)); });
-    grid.appendChild(elm("div", "vb-th vb-last", "最終更新"));
+    // 件数の多い順。同じならデータの並び（テーマの決めた順）のまま
+    var themes = (data.themes || []).map(function (t, i) { return { t: t, i: i, n: countNum(t.total) }; })
+      .sort(function (a, b) { return (b.n - a.n) || (a.i - b.i); });
+    var max = themes.reduce(function (m, x) { return Math.max(m, x.n); }, 0);
 
-    (data.themes || []).forEach(function (t) {
-      var name = elm("button", "vb-name vb-first");
-      name.type = "button";
-      name.appendChild(elm("span", "", t.theme));
-      if (t.stale) name.appendChild(elm("span", "vb-stale", "確認中"));
-      name.onclick = function () { select(data, mount, t.theme); };
-      grid.appendChild(name);
-      (data.stages || []).forEach(function (s, si) {
-        var v = (t.counts || {})[s];
-        // 右端の段階（変わった）だけ色を変えるので、その列に印を付ける
-        var c = elm("button", cellClass(v) + (si === (data.stages || []).length - 1 ? " vb-goal" : ""), cellText(v, data.k));
-        c.type = "button";
-        c.setAttribute("aria-label", t.theme + " ／ " + s + " ／ " + cellText(v, data.k));
-        c.onclick = function () { select(data, mount, t.theme); };
-        grid.appendChild(c);
-      });
-      grid.appendChild(elm("div", "vb-up vb-last", t.updated ? jpDay(t.updated) : "—"));
+    var list = elm("div", "vb-list");
+    themes.forEach(function (x) {
+      var t = x.t;
+      var row = elm("button", "vb-row" + (t.total === "<K" ? " few" : x.n ? "" : " zero"));
+      row.type = "button";
+      row.dataset.theme = t.theme;
+      row.setAttribute("aria-label", t.theme + " " + countText(t.total, data.k));
+      row.appendChild(elm("span", "vb-rname", t.theme));
+      row.appendChild(elm("span", "vb-rn", countText(t.total, data.k)));
+      var bar = elm("span", "vb-bar");
+      var fill = document.createElement("i");
+      // "<K" は実数が分からないので、あることだけ分かる短い棒にする
+      fill.style.width = x.n ? (t.total === "<K" ? 8 : Math.max(4, Math.round(x.n / max * 100))) + "%" : "0";
+      bar.appendChild(fill);
+      row.appendChild(bar);
+      row.onclick = function () { select(data, mount, t.theme); };
+      list.appendChild(row);
     });
-    scroll.appendChild(grid);
-    wrap.appendChild(scroll);
+    wrap.appendChild(list);
 
     var detail = elm("div", "vb-detail");
     detail.id = "vb_detail";
     wrap.appendChild(detail);
+
+    // 連盟の動き（公開している打ち手）。あるときだけ出す
+    var acts = data.actions || [];
+    if (acts.length) {
+      var box = elm("div", "vb-acts");
+      box.appendChild(elm("h3", "vb-h", "連盟の動き"));
+      acts.forEach(function (a) { box.appendChild(actionRow(a)); });
+      wrap.appendChild(box);
+    }
 
     var foot = elm("div", "vb-foot");
     foot.textContent = "公開しているのは、個人や施設が分からない形にした要約と件数だけです。原文は連盟の担当だけが読みます。"
@@ -99,57 +98,40 @@
     wrap.appendChild(foot);
 
     mount.appendChild(wrap);
-    /* 「私も同じ」ボタンはここに置く想定（今回は作らない） */
-    select(data, mount, SEL || (data.themes && data.themes.length ? data.themes[0].theme : ""));
+    /* 「私も同じ」ボタンを付けるならテーマ行の中（今回は作らない） */
+    // 最初は件数がいちばん多いテーマを開く。0件しか無ければ何も開かない
+    var first = themes.filter(function (x) { return x.n > 0; })[0];
+    select(data, mount, SEL || (first ? first.t.theme : ""));
   }
 
   function select(data, mount, theme) {
     SEL = theme;
     var box = mount.querySelector("#vb_detail");
     if (!box) return;
-    var t = (data.themes || []).filter(function (x) { return x.theme === theme; })[0];
-    var cells = mount.querySelectorAll(".vb-name");
-    for (var i = 0; i < cells.length; i++) cells[i].classList.toggle("sel", cells[i].textContent.indexOf(theme) === 0);
+    var rows = mount.querySelectorAll(".vb-row");
+    for (var i = 0; i < rows.length; i++) rows[i].classList.toggle("sel", rows[i].dataset.theme === theme);
     box.innerHTML = "";
+    var t = (data.themes || []).filter(function (x) { return x.theme === theme; })[0];
     if (!t) return;
 
-    var h = elm("div", "vb-dt");
-    h.appendChild(elm("span", "", t.theme));
-    if (t.stale) h.appendChild(elm("span", "vb-stale", "確認中"));
-    box.appendChild(h);
-    box.appendChild(elm("div", "vb-sub", t.stale
-      ? "このテーマは" + data.staleDays + "日以上、新しい記録がありません。いまの状況を確認しています"
-      : "最終更新 " + (t.updated ? jpDay(t.updated) : "—") + "／届いた声 " + cellText(t.total, data.k)));
-
-    var acts = (data.actions || []).filter(function (a) { return a.theme === t.theme; });
-    var plan = acts.filter(function (a) { return a.state === "予定"; });
-    var done = acts.filter(function (a) { return a.state !== "予定"; });
-
+    box.appendChild(elm("div", "vb-dt", t.theme));
+    box.appendChild(elm("div", "vb-sub", "届いた声 " + countText(t.total, data.k)));
     box.appendChild(elm("h3", "vb-h", "届いた声（公開できる要約）"));
     if (!(t.summaries || []).length) {
       box.appendChild(elm("div", "vb-empty", "公開できる要約はまだありません。公開してよいと答えていただいた声だけを、要約にして載せています"));
-    } else {
-      t.summaries.forEach(function (s) {
-        var row = elm("div", "vb-item");
-        row.appendChild(elm("div", "vb-when", jpMonth(s.month)));
-        row.appendChild(elm("div", "", s.text));
-        box.appendChild(row);
-      });
+      return;
     }
-
-    box.appendChild(elm("h3", "vb-h", "これまでの動き"));
-    if (!done.length) box.appendChild(elm("div", "vb-empty", "まだ記録がありません"));
-    done.forEach(function (a) { box.appendChild(actionRow(a)); });
-
-    if (plan.length) {
-      box.appendChild(elm("h3", "vb-h", "次の予定"));
-      plan.forEach(function (a) { box.appendChild(actionRow(a)); });
-    }
+    t.summaries.forEach(function (s) { // 新しい順（サーバーで並べ替え済み）
+      var row = elm("div", "vb-item");
+      row.appendChild(elm("div", "vb-when", jpMonth(s.month)));
+      row.appendChild(elm("div", "", s.text));
+      box.appendChild(row);
+    });
   }
 
   function actionRow(a) {
     var row = elm("div", "vb-item");
-    row.appendChild(elm("div", "vb-when", [jpDay(a.date), a.kind, a.state].filter(String).join("・")));
+    row.appendChild(elm("div", "vb-when", [jpDay(a.date), a.kind, a.theme].filter(String).join("・")));
     row.appendChild(elm("div", "", a.text));
     if (/^https?:\/\//i.test(String(a.url || ""))) { // http(s) 以外は開かない（表示側でももう一度確かめる）
       var link = elm("a", "vb-src", "出典を見る");
@@ -159,7 +141,7 @@
     return row;
   }
 
-  // 盤面を描く。mount は空の要素（voices.html と index.html の #vb_wrap）
+  // 一覧を描く。mount は空の要素（voices.html と index.html の #vb_wrap）
   global.renderVoiceBoard = function (mount) {
     if (!mount) return;
     mount.textContent = "読み込み中…";

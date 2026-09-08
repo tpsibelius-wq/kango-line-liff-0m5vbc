@@ -354,8 +354,8 @@ function applyUserView(st){
   if (mu) mu.style.display = v === "map" ? "block" : "none";
   if (v === "voice"){ $("hdr_t").textContent = "現場の声を聞かせてください"; setupVoiceForm(st); }
   if (v === "map"){
-    $("hdr_t").textContent = "届いた声と動き";
-    say("届いた声と、その後の動きです");
+    $("hdr_t").textContent = "届いた声";
+    say("テーマごとに、届いた声の件数と要約が見られます");
     if (!MAP_DONE){ MAP_DONE = true; renderVoiceBoard($("vb_wrap")); }
   }
 }
@@ -533,7 +533,7 @@ function showVoiceDone(st){
   box.appendChild(el("div", "m", dn.reply
     ? "確認のメッセージがまもなくトークに届きます。このテーマに動きがあれば、LINEでお知らせします。"
     : "確認のメッセージがまもなくトークに届きます。"));
-  var b = el("button", "join", "届いた声と動きを見る");
+  var b = el("button", "join", "届いた声を見る");
   b.onclick = function(){ VIEW = "map"; applyUserView(STATE); window.scrollTo({ top: 0 }); };
   box.appendChild(b);
   box.style.display = "block";
