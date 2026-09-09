@@ -420,11 +420,17 @@ function paintChips(id, isOn, isAuto){
 }
 function paintVoiceThemes(){ paintChips("v_themes", function(t){ return V_THEMES.indexOf(t) >= 0; }, function(t){ return V_AUTO[t]; }); }
 
+// 画面に表示している「声の取り扱い」の版。HTML の #v_pv に書いた文言と同じものを送る
+var VOICE_POLICY_SHOWN = (function(){ try { return (document.getElementById("v_pv") || {}).textContent.trim(); } catch (e) { return ""; } })();
+
 function setupVoiceForm(st){
   if (V_FORM_DONE) return; // 作るのは1回だけ（送信のあとの再描画で選んだテーマが消えないように）
   V_FORM_DONE = true;
   var cfg = (st && st.voice) || {};
-  $("v_pv").textContent = cfg.policyVersion || "（取得できませんでした。開き直してください）";
+  // 版は画面に書いてある文言（HTML の #v_pv）をそのまま使う。サーバーの現行版と違えば送信は断られる
+  if (cfg.policyVersion && cfg.policyVersion !== VOICE_POLICY_SHOWN) {
+    $("v_pv").textContent = VOICE_POLICY_SHOWN + "（サーバーは " + cfg.policyVersion + "。画面を再読み込みしてください）";
+  }
   fillSelect("v_shokuba", st.shokubaList || [], "");
   chipBox("v_want", cfg.wants || [], function(v){
     V_WANT = V_WANT === v ? "" : v;
@@ -536,7 +542,7 @@ function sendVoice(){
   var d = { kubun: V_KUBUN, shokuba: $("v_shokuba").value, area: $("v_area").value.trim(),
             themes: V_THEMES.slice(), body: $("v_body").value.trim(), want: V_WANT,
             consentRecord: $("v_c1").checked, consentPublic: $("v_c2").checked, consentReply: $("v_c3").checked,
-            policyVersion: cfg.policyVersion || "" };
+            policyVersion: VOICE_POLICY_SHOWN }; // 画面に表示した版をそのまま送る（表示と違う版で同意させない）
   if (!d.kubun){ alert("区分を選んでください"); return; }
   if (!d.themes.length){ alert("テーマを1つ以上選んでください"); return; }
   if (!d.body){ alert("声の内容を書いてください"); return; }
@@ -1272,10 +1278,23 @@ function renderVoicesAdmin(st){
   todo.forEach(function(t){
     var row = el("div", "hist");
     row.appendChild(el("div", "t", t.no + "　" + (t.at || "") + "　" + (t.themes || "（テーマなし）")));
-    row.appendChild(el("div", "m", t.head || "（本文は「最新に更新」を押すか、スプレッドシートで見られます）"));
+    row.appendChild(el("div", "m", "本文は「声」シートで読んでください（画面と通知には出しません）"));
     tb.appendChild(row);
   });
-  if (!v.live && todo.length) tb.appendChild(el("div", "hint", "本文の冒頭は、この画面を「最新に更新」したときだけ出ます（高速表示用の写しには声の本文を置いていません）"));
+  // 相談（話を聞いてほしい）。本文は出さず、受付番号・テーマ・期限だけ
+  var talk = v.talk || [];
+  if (talk.length){
+    tb.appendChild(el("div", "t", "🙋 相談（話を聞いてほしい）" + talk.length + "件"));
+    talk.forEach(function(t){
+      var row = el("div", "hist");
+      row.appendChild(el("div", "t", t.no + "　" + (t.themes || "") + "　受付 " + (t.at || "") + "　期限 " + (t.due || "")
+        + (t.overdue > 0 ? "（" + t.overdue + "日超過）" : "")));
+      var b = el("button", "b_sub", "連絡済みにする");
+      b.onclick = function(){ voiceContacted(t.no); };
+      row.appendChild(b);
+      tb.appendChild(row);
+    });
+  }
 
   th.innerHTML = "";
   var tbl = document.createElement("table"); tbl.className = "kv";
@@ -1292,6 +1311,16 @@ function renderVoicesAdmin(st){
 }
 
 // 自動処理の方式と、最終自動処理日時
+// 相談（話を聞いてほしい）に連絡した。本文は扱わず、受付番号だけを送る
+function voiceContacted(no){
+  if (!confirm("相談 " + no + " を「連絡済み」にします。よろしいですか？")) return;
+  say("記録中…");
+  api("liff_admin_ops", { op: "voice_contacted", arg: no }).then(function(j){
+    say(j.message || "連絡済みにしました");
+    refreshAdmin();
+  }).catch(function(e){ say("エラー: " + e.message); });
+}
+
 function renderVoiceAi(v){
   var box = $("v_ai"); if (!box) return;
   var ai = v.ai || {};
@@ -1366,7 +1395,11 @@ function renderNewsAdmin(st){
   var box = $("nw_admin"); if (!box) return;
   var v = st.news || { items: [], note: "", lastCollected: "" };
   if (!NW_NOTE_DONE){ NW_NOTE_DONE = true; $("nw_note").value = v.note || ""; }
-  $("nw_last").textContent = v.lastCollected ? "最終収集 " + String(v.lastCollected).slice(0, 10) : "まだ収集していません";
+  var src = (v.sources || []);
+  var ng = src.filter(function(x){ return x.fail >= 2; });
+  $("nw_last").textContent = (v.lastCollected ? "最終収集 " + String(v.lastCollected).slice(0, 10) : "まだ収集していません")
+    + (src.length ? "　出典ごと: " + src.map(function(x){ return x.name + " " + (x.last || "未取得") + (x.fail ? "（" + x.fail + "回連続で失敗）" : ""); }).join("／") : "")
+    + (ng.length ? "　⚠️ " + ng.map(function(x){ return x.name; }).join("・") + " が続けて取れていません" : "");
   box.innerHTML = "";
   var group = "";
   (v.items || []).forEach(function(it){
