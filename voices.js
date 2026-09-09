@@ -121,12 +121,82 @@
       box.appendChild(elm("div", "vb-empty", "公開できる要約はまだありません。公開してよいと答えていただいた声だけを、要約にして載せています"));
       return;
     }
+    var act = global.VOICE_ACTIONS || null; // LINE の中（LIFF）だけ。単独ページでは null＝表示のみ
     t.summaries.forEach(function (s) { // 新しい順（サーバーで並べ替え済み）
       var row = elm("div", "vb-item");
       row.appendChild(elm("div", "vb-when", jpMonth(s.month)));
       row.appendChild(elm("div", "", s.text));
+      row.appendChild(likeRow(s, act));
+      if (String(s.reply || "").trim()) {
+        var rep = elm("div", "vb-reply");
+        rep.appendChild(elm("span", "vb-reply-t", "連盟から"));
+        rep.appendChild(elm("span", "", s.reply));
+        row.appendChild(rep);
+      }
+      var kids = s.comments || [];
+      if (kids.length) {
+        var det = document.createElement("details");
+        det.className = "vb-cmts";
+        var sm = document.createElement("summary");
+        sm.textContent = "意見 " + kids.length + "件";
+        det.appendChild(sm);
+        kids.forEach(function (c) {
+          var ci = elm("div", "vb-cmt");
+          ci.appendChild(elm("div", "vb-when", jpMonth(c.month)));
+          ci.appendChild(elm("div", "", c.text));
+          ci.appendChild(likeRow(c, act));
+          det.appendChild(ci);
+        });
+        row.appendChild(det);
+      }
+      if (act && act.comment) {
+        var cb = elm("button", "vb-write", "意見を書く");
+        cb.onclick = function () { act.comment(s.ref, t.theme, s.text); };
+        row.appendChild(cb);
+      } else if (!act && !box.querySelector(".vb-inline-line")) {
+        // 単独ページ: 押せないので、LINE で開く入口だけ出す（最初の要約に1つ）
+        var a = elm("a", "vb-inline-line", "LINE で開くと「♥ 私も同じ」を押して、意見も書けます");
+        a.href = (global.SITE_CONFIG && global.SITE_CONFIG.ADD_URL) || "go.html";
+        a.target = "_blank"; a.rel = "noopener";
+        row.appendChild(a);
+      }
       box.appendChild(row);
     });
+  }
+
+  // 「♥ 私も同じ n」。LIFF の中はトグル、単独ページは表示のみ
+  function likeRow(s, act) {
+    var wrap = elm("div", "vb-likes");
+    var n = Number(s.likes) || 0;
+    if (!act || !act.like) {
+      wrap.appendChild(elm("span", "vb-like ro", "♥ 私も同じ " + n));
+      return wrap;
+    }
+    var on = !!(act.liked && act.liked[s.ref]);
+    var b = elm("button", "vb-like" + (on ? " on" : ""), "♥ 私も同じ " + n);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.onclick = function () {
+      if (b.disabled) return;
+      var next = !on, before = n;
+      n = Math.max(0, n + (next ? 1 : -1)); on = next;   // 押した瞬間に増減して、裏で送る
+      b.textContent = "♥ 私も同じ " + n;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.disabled = true;
+      act.like(s.ref, next).then(function (r) {
+        if (r && typeof r.likes === "number") { n = r.likes; on = !!r.liked; }
+        b.textContent = "♥ 私も同じ " + n;
+        b.classList.toggle("on", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      }).catch(function () {                              // 失敗したら戻す
+        n = before; on = !next;
+        b.textContent = "♥ 私も同じ " + n;
+        b.classList.toggle("on", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      }).then(function () { b.disabled = false; });
+    };
+    wrap.appendChild(b);
+    return wrap;
   }
 
   function actionRow(a) {
@@ -142,10 +212,12 @@
   }
 
   // 一覧を描く。mount は空の要素（voices.html と index.html の #vb_wrap）
-  global.renderVoiceBoard = function (mount) {
+  // 送信のあとに描き直す（意見を書いたあとなど）
+  global.reloadVoiceBoard = function (mount) { SEL = SEL; global.renderVoiceBoard(mount, SEL); };
+  global.renderVoiceBoard = function (mount, keepTheme) {
     if (!mount) return;
     mount.textContent = "読み込み中…";
-    loadPublic().then(function (data) { board(data, mount); })
+    loadPublic().then(function (data) { board(data, mount); if (keepTheme) select(data, mount, keepTheme); })
       .catch(function (e) {
         mount.textContent = "";
         mount.appendChild(elm("div", "vb-empty", "いまは表示できません（" + (e && e.message ? e.message : e) + "）。時間をおいて開き直してください"));

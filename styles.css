@@ -287,3 +287,17 @@ table.kv td:first-child{white-space:nowrap;color:#555;width:34%}
   .vb-wide .vb-rname{font-size:14px}
   .vb-wide .vb-row{padding-top:11px;padding-bottom:12px}
 }
+
+/* 届いた声: 「私も同じ」・連盟から・意見（既存の色トークンだけを使う） */
+.vb-likes{margin-top:6px}
+.vb-like{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;width:auto;margin:0}
+.vb-like.on{border-color:var(--pink);background:var(--panel-pink);color:var(--pink-deep);font-weight:600}
+.vb-like.ro{display:inline-block;cursor:default;background:var(--panel)}
+.vb-like:disabled{opacity:.6}
+.vb-reply{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--panel);border-left:3px solid var(--sky);font-size:12.5px;line-height:1.7}
+.vb-reply-t{display:block;font-size:11px;color:var(--navy);font-weight:600;margin-bottom:2px}
+.vb-cmts{margin-top:8px}
+.vb-cmts>summary{font-size:12px;color:var(--navy);cursor:pointer;padding:4px 0}
+.vb-cmt{border-top:1px dashed var(--line);padding:6px 0 6px 10px;font-size:12.5px;line-height:1.7}
+.vb-write{margin-top:8px;font-size:12px;padding:5px 12px;border-radius:999px;border:1px solid var(--navy);background:#fff;color:var(--navy);cursor:pointer;width:auto}
+.vb-inline-line{display:inline-block;margin-top:8px;font-size:12px;color:var(--navy)}

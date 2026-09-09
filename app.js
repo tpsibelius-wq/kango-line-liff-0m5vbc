@@ -373,7 +373,7 @@ function applyUserView(st){
   if (v === "map"){
     $("hdr_t").textContent = "届いた声";
     say("テーマごとに、届いた声の件数と要約が見られます");
-    if (!MAP_DONE){ MAP_DONE = true; renderVoiceBoard($("vb_wrap")); }
+    if (!MAP_DONE){ MAP_DONE = true; setupVoiceActions(); renderVoiceBoard($("vb_wrap")); }
   }
   if (v === "news"){
     $("hdr_t").textContent = "最新情報";
@@ -422,6 +422,8 @@ function paintVoiceThemes(){ paintChips("v_themes", function(t){ return V_THEMES
 
 // 画面に表示している「声の取り扱い」の版。HTML の #v_pv に書いた文言と同じものを送る
 var VOICE_POLICY_SHOWN = (function(){ try { return (document.getElementById("v_pv") || {}).textContent.trim(); } catch (e) { return ""; } })();
+// 意見の同意文の版。画面（#cm_pv）に書いた文言をそのまま送る
+var COMMENT_POLICY_SHOWN = (function(){ try { return (document.getElementById("cm_pv") || {}).textContent.trim(); } catch (e) { return ""; } })();
 
 function setupVoiceForm(st){
   if (V_FORM_DONE) return; // 作るのは1回だけ（送信のあとの再描画で選んだテーマが消えないように）
@@ -470,6 +472,59 @@ function suggestVoiceThemes(){
     V_THEMES.push(t); V_AUTO[t] = true; added = true;
   });
   if (added) paintVoiceThemes();
+}
+
+// ---- 届いた声の盤面（?v=map）で押せるようにする。単独ページ（voices.html）では VOICE_ACTIONS を作らない＝表示だけ ----
+var V_LIKED = {};      // 自分が押した ref
+function setupVoiceActions(){
+  window.VOICE_ACTIONS = {
+    liked: V_LIKED,
+    like: function(ref, on){
+      return api("liff_like", { ref: ref, on: on }).then(function(j){
+        var r = (j && j.like) || {};
+        if (r.liked) V_LIKED[ref] = 1; else delete V_LIKED[ref];
+        return r;
+      });
+    },
+    comment: function(ref, theme, parentText){ openCommentForm(ref, theme, parentText); },
+  };
+  // 自分が押した分を取り、ボタンの状態に反映する（読み取りだけ）
+  api("liff_like_state", {}).then(function(j){
+    (j && j.mine ? j.mine : []).forEach(function(r){ V_LIKED[r] = 1; });
+    if (MAP_DONE) reloadVoiceBoard($("vb_wrap"));
+  }).catch(function(){});
+}
+
+// 意見を書く（LIFF の中だけ）。要約せず、そのまますぐ公開される
+var C_PARENT = "";
+function openCommentForm(ref, theme, parentText){
+  C_PARENT = ref;
+  $("cm_parent").textContent = parentText || "";
+  $("cm_theme").textContent = theme || "";
+  $("cm_text").value = ""; $("cm_count").textContent = "0 / 300字";
+  $("cm_consent").checked = false;
+  fillSelect("cm_kubun", (STATE && STATE.kubunList) || [], "");
+  $("cm_box").style.display = "block";
+  $("cm_box").scrollIntoView({ behavior: "smooth" });
+}
+function closeCommentForm(){ $("cm_box").style.display = "none"; C_PARENT = ""; }
+function countComment(){ $("cm_count").textContent = ($("cm_text").value || "").length + " / 300字"; }
+function sendComment(){
+  var d = { parent: C_PARENT, text: $("cm_text").value.trim(), kubun: $("cm_kubun").value,
+            consent: $("cm_consent").checked, policyVersion: COMMENT_POLICY_SHOWN };
+  if (!d.parent){ alert("どの声への意見か分かりませんでした。開き直してください"); return; }
+  if (!d.text){ alert("意見を書いてください"); return; }
+  if (d.text.length > 300){ alert("意見は300字までです"); return; }
+  if (!d.kubun){ alert("区分を選んでください"); return; }
+  if (!d.consent){ alert("「そのまますぐに公開される」ことへの同意をお願いします"); return; }
+  $("cm_send").disabled = true; say("送信中…");
+  api("liff_comment", { data: d }).then(function(st){
+    $("cm_send").disabled = false;
+    closeCommentForm();
+    var done = st && st.commentDone;
+    say((done && done.message) || "意見を送りました");
+    if (done && !done.held) reloadVoiceBoard($("vb_wrap"));
+  }).catch(function(e){ $("cm_send").disabled = false; say("エラー: " + e.message); });
 }
 
 // ---- 音声入力。使える端末はその場で認識し、使えない端末はキーボードのマイクへ案内する ----
@@ -1267,6 +1322,7 @@ function renderVoicesAdmin(st){
   $("v_sheet").href = st.sheetUrl || "#";
   renderVoiceAi(v);
   renderVoiceCheck(v);
+  renderVoicePublished(v);
   bx.innerHTML = "";
   (v.buckets || []).forEach(function(b){ bx.appendChild(el("span", "chip" + (b.n ? " ok" : " ng"), b.label + " " + b.n)); });
   var todoN = ((v.buckets || []).filter(function(b){ return b.key === "todo"; })[0] || {}).n || 0;
@@ -1281,6 +1337,24 @@ function renderVoicesAdmin(st){
     row.appendChild(el("div", "m", "本文は「声」シートで読んでください（画面と通知には出しません）"));
     tb.appendChild(row);
   });
+  // 意見（公開された要約へのコメント）。要確認を先に出す
+  var cms = v.comments || [];
+  if (cms.length){
+    tb.appendChild(el("div", "t", "💬 意見 " + cms.length + "件（要確認 " + cms.filter(function(c){ return c.state === "要確認"; }).length + "）"));
+    cms.forEach(function(c){
+      var row = el("div", "hist");
+      row.appendChild(el("div", "t", c.no + "　↳ 親 " + c.parent + "　" + (c.at || "") + "　" + c.state
+        + (c.likes ? "　♥ " + c.likes : "") + (c.checked ? "" : "　（点検まだ）")));
+      row.appendChild(el("div", "m", c.text));
+      if (c.why) row.appendChild(el("small", "", c.why));
+      var bar = el("div", "");
+      if (c.state !== "公開"){ var bp = el("button", "b_sub", "公開する"); bp.onclick = function(){ commentOp("comment_publish", c.no, "意見 " + c.no + " を公開します。よろしいですか？"); }; bar.appendChild(bp); }
+      if (c.state !== "非公開"){ var bh = el("button", "b_sub", "非公開にする"); bh.onclick = function(){ commentOp("comment_hide", c.no, "意見 " + c.no + " を非公開にします。よろしいですか？"); }; bar.appendChild(bh); }
+      row.appendChild(bar);
+      tb.appendChild(row);
+    });
+  }
+
   // 相談（話を聞いてほしい）。本文は出さず、受付番号・テーマ・期限だけ
   var talk = v.talk || [];
   if (talk.length){
@@ -1311,6 +1385,23 @@ function renderVoicesAdmin(st){
 }
 
 // 自動処理の方式と、最終自動処理日時
+// 意見の公開／非公開
+function commentOp(op, no, msg){
+  if (!confirm(msg)) return;
+  say("記録中…");
+  api("liff_admin_ops", { op: op, arg: no }).then(function(j){ say(j.message || "変えました"); refreshAdmin(); })
+    .catch(function(e){ say("エラー: " + e.message); });
+}
+
+// 連盟から（公開）。公開ページの該当要約の下に出る一言
+function voiceNotePublic(no, input){
+  var t = String(input.value || "").trim();
+  say("保存中…");
+  api("liff_admin_ops", { op: "voice_note_public", arg: JSON.stringify({ no: no, text: t }) })
+    .then(function(j){ say(j.message || "保存しました"); refreshAdmin(); })
+    .catch(function(e){ say("エラー: " + e.message); });
+}
+
 // 相談（話を聞いてほしい）に連絡した。本文は扱わず、受付番号だけを送る
 function voiceContacted(no){
   if (!confirm("相談 " + no + " を「連絡済み」にします。よろしいですか？")) return;
@@ -1357,6 +1448,27 @@ function renderVoiceCheck(v){
     b2.onclick = function(){ if (confirm("声 " + c.no + " を公開しないことにしますか？（本文は残ります）")) voiceSave(row, "voice_exclude", { no: c.no }, c.no + " を公開しないことにしました"); };
     btns.appendChild(b2);
     row.appendChild(btns);
+    box.appendChild(row);
+  });
+}
+
+// 公開している要約の一覧。ここで「連盟から（公開）」を書く
+function renderVoicePublished(v){
+  var box = $("v_pub"); if (!box) return;
+  box.innerHTML = "";
+  var list = v.published || [];
+  if (!list.length){ box.appendChild(el("div", "hint", "公開している要約はまだありません")); return; }
+  list.forEach(function(c){
+    var row = el("div", "hist");
+    row.appendChild(el("div", "t", c.no + "　" + (c.at || "") + "　" + (c.themes || "")
+      + "　♥ " + c.likes + "　意見 " + c.comments + "件"));
+    row.appendChild(el("div", "m", c.summary));
+    var inp = document.createElement("input");
+    inp.value = c.note || ""; inp.maxLength = 200; inp.placeholder = "連盟から（公開ページに出る一言・200字まで）";
+    row.appendChild(inp);
+    var b = el("button", "b_sub", "保存");
+    b.onclick = function(){ voiceNotePublic(c.no, inp); };
+    row.appendChild(b);
     box.appendChild(row);
   });
 }

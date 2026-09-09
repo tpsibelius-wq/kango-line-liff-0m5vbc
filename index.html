@@ -11,7 +11,7 @@
 <link rel="icon" href="assets/favicon.svg"><link rel="apple-touch-icon" href="assets/icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=202609081200">
+<link rel="stylesheet" href="styles.css?v=202609091328">
 </head>
 <body>
 <header id="hdr"><img src="assets/logo.svg" alt="静岡県看護連盟" class="hlogo"><span id="hdr_t">公式LINE</span></header>
@@ -159,6 +159,21 @@
     <div class="t">届いた声</div>
     <div class="m vlead">公式LINE に届いた現場の声を、テーマごとにまとめています。<br>公開しているのは、個人や施設が分からない形にした要約と件数だけです。</div>
     <div id="vb_wrap"></div>
+
+    <div class="panel" id="cm_box" style="display:none;margin-top:12px">
+      <div class="t">この声に意見を書く</div>
+      <div class="hint" id="cm_theme"></div>
+      <div class="hint" id="cm_parent" style="background:var(--panel);border-radius:8px;padding:8px;margin:6px 0;line-height:1.7"></div>
+      <label for="cm_text">意見 ※必須（300字まで）</label>
+      <textarea id="cm_text" rows="4" maxlength="300" oninput="countComment()" placeholder="この声について、あなたの考えや現場の様子"></textarea>
+      <div class="hint" id="cm_count">0 / 300字</div>
+      <label>区分 ※必須</label><select id="cm_kubun"><option value="">（選択）</option></select>
+      <div class="hint" style="margin-top:8px">この意見は<b>要約せず、そのまますぐに公開されます</b>。氏名・施設名・他人のことは書かないでください。施設名や個人名が読み取れたときは、担当が確認するまで載りません。</div>
+      <label style="font-weight:normal"><input type="checkbox" id="cm_consent" style="width:auto"> ※必須　上のとおり、そのまますぐに公開されることに同意します</label>
+      <div class="hint">意見の取り扱いの版: <span id="cm_pv">v1 暫定（2026-09-09）</span></div>
+      <button id="cm_send" class="join" onclick="sendComment()">この内容で送る</button>
+      <button type="button" class="cancel" onclick="closeCommentForm()">やめる</button>
+    </div>
   </section>
   <div class="panel" id="ref_guest" style="display:none">
     <div class="t">紹介は連盟会員の機能です</div>
@@ -475,6 +490,9 @@
   <h2>要確認（自動処理が判断を保留したもの）</h2>
   <div id="v_check"></div>
   <pre id="v_check_out" class="hist" style="display:none;white-space:pre-wrap;font-family:inherit"></pre>
+  <h2 style="margin-top:16px">📣 公開している要約と「連盟から」</h2>
+  <div class="hint">公開ページの各要約の下に出る一言です（200字まで）。空にして保存すると消えます</div>
+  <div id="v_pub"></div>
   <div class="panel">
     <div class="t">要約の書き方</div>
     <div class="hint" style="line-height:1.8">
@@ -569,7 +587,7 @@
 </div>
 <div id="dbg" style="font-size:10px;color:#999;margin-top:20px;word-break:break-all"></div>
 </div>
-<script src="config.js?v=202609081200"></script>
+<script src="config.js?v=202609091328"></script>
 <script>
 // LINEの部品の読込を待たずに、イベント一覧だけの写し（個人情報なし）を先に取りに行く
 var WORKER = (window.SITE_CONFIG || {}).WORKER || "";
@@ -579,8 +597,8 @@ try {
 } catch (e) {}
 </script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<script src="voices.js?v=202609081200"></script>
-<script src="news.js?v=202609081200"></script>
-<script src="app.js?v=202609081200"></script>
+<script src="voices.js?v=202609091328"></script>
+<script src="news.js?v=202609091328"></script>
+<script src="app.js?v=202609091328"></script>
 </body>
 </html>
