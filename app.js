@@ -1324,11 +1324,14 @@ function voiceOut(text, isError){
 // 押した行をその場でたたみ、保存は裏で行う（失敗したら戻す）。全体の読み直しはしない
 function voiceSave(row, op, arg, done){
   if (op === "voice_publish" && !String(arg.summary || "").trim()){ voiceOut("要約を入力してください", true); return; }
+  var btns = row.querySelectorAll("button");
+  var able = function(on){ Array.prototype.forEach.call(btns, function(b){ b.disabled = !on; }); };
+  able(false); // 送信中は同じ行のボタンを押せなくする
   row.style.display = "none";
   voiceOut("保存中…");
   api("liff_admin_ops", { op: op, arg: arg })
     .then(function(){ voiceOut(done); voiceCheckLeft(); })
-    .catch(function(e){ row.style.display = ""; voiceOut("保存できませんでした: " + e.message, true); });
+    .catch(function(e){ row.style.display = ""; able(true); voiceOut("保存できませんでした: " + e.message, true); });
 }
 
 // たたんだ結果、要確認が残っていなければその旨を出す
@@ -1341,7 +1344,10 @@ function voiceCheckLeft(){
 // ---- 管理: 📰最新情報（★ピックアップ／○載せる／×載せない を押して決める）----
 // 押した瞬間に見た目と手元の状態を書き換え、保存は裏で行う（失敗したら元に戻す）
 var NW_NOTE_DONE = false;
-var NW_SAVE = {}; // 記事ID -> { sending: 送信中か, next: 次に送る値, before: 押す前の値 }
+var NW_QUEUE = {};   // まだ送っていない押下（記事ID -> 値。同じ行を何度押しても最後の値だけ）
+var NW_BEFORE = {};  // 押す前の値（保存できなかったら戻す）
+var NW_TIMER = null, NW_SENDING = false;
+var NW_WAIT = 700;   // 最後に押してからこれだけ待って、まとめて1回送る
 function renderNewsAdmin(st){
   var box = $("nw_admin"); if (!box) return;
   var v = st.news || { items: [], note: "", lastCollected: "" };
@@ -1396,28 +1402,48 @@ function applyNewsPick(id, value){
   Array.prototype.forEach.call(row.querySelectorAll(".chip"), function(c){ c.classList.toggle("sel", c.textContent.indexOf(value) === 0); });
 }
 
+// 押した分を貯め、最後の押下から NW_WAIT ミリ秒後に1回だけ送る（何行押しても要求は1本）
 function setNewsPick(id, value){
-  var st = NW_SAVE[id] || (NW_SAVE[id] = { sending: false, next: null, before: (newsItem(id) || {}).pick || "" });
+  if (!(id in NW_BEFORE)) NW_BEFORE[id] = (newsItem(id) || {}).pick || "";
+  NW_QUEUE[id] = value;
   applyNewsPick(id, value);
-  if (st.sending){ st.next = value; return; } // 送信中は最後に押した値だけを覚えて、終わってから送る
-  sendNewsPick(id, value);
+  newsRowNote(id, "保存中…");
+  if (NW_TIMER) clearTimeout(NW_TIMER);
+  NW_TIMER = setTimeout(flushNewsPicks, NW_WAIT);
 }
 
-function sendNewsPick(id, value){
-  var st = NW_SAVE[id];
-  st.sending = true;
-  st.next = null;
-  newsRowNote(id, "保存中…");
-  api("liff_admin_ops", { op: "news_set", arg: { id: id, value: value } }).then(function(){
-    st.sending = false;
-    if (st.next !== null && st.next !== value){ sendNewsPick(id, st.next); return; }
-    delete NW_SAVE[id];
-    newsRowNote(id, "保存済み", false, 1500);
+function flushNewsPicks(){
+  NW_TIMER = null;
+  if (NW_SENDING) return; // 飛んでいる要求は常に1本。送信中に押された分は、終わってから送る
+  var ids = Object.keys(NW_QUEUE);
+  if (!ids.length) return;
+  var items = [], before = {};
+  ids.forEach(function(id){
+    items.push({ id: id, value: NW_QUEUE[id] });
+    before[id] = NW_BEFORE[id];
+    delete NW_QUEUE[id]; delete NW_BEFORE[id];
+  });
+  var rollback = function(reason){
+    ids.forEach(function(id){
+      if (id in NW_QUEUE) return; // そのあと押し直された行は、新しい値のままにする
+      applyNewsPick(id, before[id]);
+      newsRowNote(id, reason, true);
+    });
+  };
+  NW_SENDING = true;
+  api("liff_admin_ops", { op: "news_set", arg: { items: items } }).then(function(j){
+    NW_SENDING = false;
+    var bad = {};
+    (j.failed || []).forEach(function(f){ bad[f.id] = f.reason || "保存できませんでした"; });
+    ids.forEach(function(id){
+      if (bad[id]){ if (!(id in NW_QUEUE)){ applyNewsPick(id, before[id]); newsRowNote(id, bad[id], true); } }
+      else newsRowNote(id, "保存済み", false, 1500);
+    });
+    if (Object.keys(NW_QUEUE).length) flushNewsPicks();
   }).catch(function(){
-    var before = st.before;
-    delete NW_SAVE[id];
-    applyNewsPick(id, before); // 元に戻す
-    newsRowNote(id, "保存できませんでした。もう一度押してください", true);
+    NW_SENDING = false;
+    rollback("保存できませんでした。もう一度押してください");
+    if (Object.keys(NW_QUEUE).length) flushNewsPicks();
   });
 }
 
