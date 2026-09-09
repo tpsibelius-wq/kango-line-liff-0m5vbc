@@ -11,7 +11,7 @@
 <link rel="icon" href="assets/favicon.svg"><link rel="apple-touch-icon" href="assets/icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=202609091402">
+<link rel="stylesheet" href="styles.css?v=202609091453">
 </head>
 <body>
 <header id="hdr"><img src="assets/logo.svg" alt="静岡県看護連盟" class="hlogo"><span id="hdr_t">公式LINE</span></header>
@@ -359,6 +359,9 @@
     <label>予約配信（日時を入れて保存すると、その時刻に自動で全員配信）</label>
     <div style="display:flex;gap:6px"><input id="a_sched" type="datetime-local" style="flex:1"><button type="button" class="b_clr" onclick="document.getElementById('a_sched').value='';" style="white-space:nowrap">取消</button></div>
     <div class="hint">10分おきにチェックして送信。「今すぐ全員に配信」すると予約は解除されます</div>
+    <label>配信の宛先</label>
+    <select id="a_target"><option value="全員">全員（友だち全体）</option><option value="会員のみ">会員のみ</option><option value="未加入者のみ">未加入者のみ</option></select>
+    <div class="hint">「会員のみ」「未加入者のみ」は、こちらが LINE の ID を知っている人にだけ届きます（友だち一覧・会員シートに載っている人）</div>
     <label style="font-weight:normal"><input type="checkbox" id="a_active" checked style="width:auto"> 受付中（外すと案内・申込から消えます）</label>
     <details id="a_more" style="margin-top:10px"><summary style="font-size:13px;color:var(--blue);padding:6px 0">詳しい設定（締切前リマインド・御礼・画像を外す）</summary>
     <label style="font-weight:normal"><input type="checkbox" id="a_dlremind" style="width:auto"> 締切2日前の朝9時に「まだ間に合います」を全員に自動配信する（通数を1本使います）</label>
@@ -557,6 +560,21 @@
   <div class="hint">画像を差し替えたあとに押すと、通常・管理者・会員の3種を作り直します</div>
   <button type="button" onclick="rebuildMenus()">メニューを作り直す</button>
 
+  <h2 id="sec_notice">📣 お知らせを配信する</h2>
+  <div class="hint">イベント以外の連絡（総会・研修・募集など）を、宛先を選んで送ります。まず「テスト送信」で自分に届く形を確かめてください</div>
+  <div class="panel">
+    <label for="nt_text">本文 ※必須（1000字まで）</label>
+    <textarea id="nt_text" rows="5" maxlength="1000" oninput="countNotice()" placeholder="お知らせの本文"></textarea>
+    <div class="hint" id="nt_count">0 / 1000字</div>
+    <label for="nt_img">画像URL（任意・https:// から）</label><input id="nt_img" placeholder="https://…">
+    <label>宛先</label>
+    <select id="nt_target"><option value="全員">全員（友だち全体）</option><option value="会員のみ">会員のみ</option><option value="未加入者のみ">未加入者のみ</option></select>
+    <div class="hint">送るたびに宛先の人数分の通数を使います。今月の残りは下の「運用」→「点検」で見られます</div>
+    <button type="button" class="b_sub" onclick="sendNotice(true)">テスト送信（自分だけ）</button>
+    <button type="button" id="nt_send" onclick="sendNotice(false)" style="background:var(--navy);color:#fff;width:100%;margin-top:8px">この宛先に配信する</button>
+    <pre id="nt_out" class="hist" style="display:none;white-space:pre-wrap;margin-top:8px;font-family:inherit"></pre>
+  </div>
+
   <h2 id="sec_ops">🛠 運用（点検・バックアップ・保持期間）</h2>
   <div class="hint">これまで URL に鍵を付けて開いていた操作。結果は下に出ます。「匿名化」だけは元に戻せないので確認が入ります</div>
   <div style="display:flex;flex-wrap:wrap;gap:6px">
@@ -587,7 +605,7 @@
 </div>
 <div id="dbg" style="font-size:10px;color:#999;margin-top:20px;word-break:break-all"></div>
 </div>
-<script src="config.js?v=202609091402"></script>
+<script src="config.js?v=202609091453"></script>
 <script>
 // LINEの部品の読込を待たずに、イベント一覧だけの写し（個人情報なし）を先に取りに行く
 var WORKER = (window.SITE_CONFIG || {}).WORKER || "";
@@ -597,8 +615,8 @@ try {
 } catch (e) {}
 </script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<script src="voices.js?v=202609091402"></script>
-<script src="news.js?v=202609091402"></script>
-<script src="app.js?v=202609091402"></script>
+<script src="voices.js?v=202609091453"></script>
+<script src="news.js?v=202609091453"></script>
+<script src="app.js?v=202609091453"></script>
 </body>
 </html>

@@ -1385,6 +1385,25 @@ function renderVoicesAdmin(st){
 }
 
 // 自動処理の方式と、最終自動処理日時
+// 📣 お知らせの配信（イベント以外の連絡）。宛先を選んで送る
+function countNotice(){ $("nt_count").textContent = ($("nt_text").value || "").length + " / 1000字"; }
+function sendNotice(test){
+  var text = $("nt_text").value.trim();
+  var target = $("nt_target").value || "全員";
+  if (!text){ alert("本文を入力してください"); return; }
+  if (text.length > 1000){ alert("お知らせは1000字までです"); return; }
+  if (!test && !confirm("「" + target + "」に配信します。取り消せません。よろしいですか？")) return;
+  var out = $("nt_out"); out.style.display = "block"; out.textContent = test ? "テスト送信中…" : "配信中…";
+  $("nt_send").disabled = true;
+  api("liff_admin_ops", { op: "notice_send", arg: JSON.stringify({ text: text, imageUrl: $("nt_img").value.trim(), target: target, test: !!test }) })
+    .then(function(j){
+      out.textContent = j.message || "送りました";
+      $("nt_send").disabled = false;
+      if (!test){ $("nt_text").value = ""; $("nt_img").value = ""; countNotice(); refreshAdmin(); }
+    })
+    .catch(function(e){ out.textContent = "エラー: " + e.message; $("nt_send").disabled = false; });
+}
+
 // 意見の公開／非公開
 function commentOp(op, no, msg){
   if (!confirm(msg)) return;
@@ -2152,6 +2171,7 @@ function adminLoad(){
   $("a_place").value = e.place; $("a_desc").value = e.desc; $("a_deadline").value = e.deadline;
   $("a_cap").value = e.cap; $("a_fee").value = e.fee; $("a_map").value = e.mapUrl; $("a_sched").value = e.scheduleAt || "";
   $("a_active").checked = e.active; $("a_dlremind").checked = !!e.deadlineRemind; $("a_thanks").checked = (e.thanksAuto !== false);
+  $("a_target").value = e.target || "全員";
   if (e.img){ $("a_prev").src = e.img; $("a_prev").style.display = "block"; }
   renderApplicants();
   updatePreview();
@@ -2183,7 +2203,7 @@ function adminSave(mode){
   var d = { name: $("a_name").value.trim(), date: $("a_date").value, time: $("a_time").value,
             place: $("a_place").value, desc: $("a_desc").value, deadline: $("a_deadline").value,
             cap: $("a_cap").value, fee: $("a_fee").value.trim(), mapUrl: $("a_map").value.trim(),
-            scheduleAt: $("a_sched").value || "", active: $("a_active").checked,
+            scheduleAt: $("a_sched").value || "", active: $("a_active").checked, target: $("a_target").value || "全員",
             deadlineRemind: $("a_dlremind").checked, thanksAuto: $("a_thanks").checked,
             imageBase64: A_IMG, imageRatio: A_RATIO, removeImage: $("a_rmimg").checked, copyImageFrom: COPY_FROM,
             origName: $("a_ev").value || "" }; // 読み込んだイベントの元の名前（変えたときは申込も追随する）
