@@ -38,9 +38,14 @@ function api(action, payload){
   var isWrite = action === "liff_apply" || action === "liff_cancel" || action === "liff_voice" || action === "liff_join" || (action.indexOf("liff_admin_") === 0 && action !== "liff_admin_bootstrap");
   if (isWrite) body.idem = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   var send = function(url){
-    return fetch(url, { method: "POST", body: JSON.stringify(body) })
+    // 25秒で中断する（応答が返らないまま画面が「保存中…」で止まらないように）。中断は失敗として扱う
+    var ctrl = ("AbortController" in window) ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 25000) : null;
+    var stop = function(){ if (timer) clearTimeout(timer); };
+    return fetch(url, { method: "POST", body: JSON.stringify(body), signal: ctrl ? ctrl.signal : undefined })
       .catch(function(){ throw new Error("通信に失敗しました。電波の良い場所でもう一度お試しください"); })
-      .then(function(r){ return r.json().catch(function(){ throw new Error("サーバーの応答が読めませんでした。少し待ってからもう一度お試しください"); }); });
+      .then(function(r){ return r.json().catch(function(){ throw new Error("サーバーの応答が読めませんでした。少し待ってからもう一度お試しください"); }); })
+      .then(function(j){ stop(); return j; }, function(e){ stop(); throw e; });
   };
   // 申込・キャンセル・管理操作はWorkerが即時に受け付け、裏でGASへ渡す（配信などの結果はトークに届く）。Workerが使えないときはGASへ直接
   var viaWorker = !!WORKER && (action === "liff_apply" || action === "liff_cancel" || (action.indexOf("liff_admin_") === 0 && action !== "liff_admin_bootstrap" && action !== "liff_admin_ops" && action !== "liff_admin_delete_event")); // 運用と削除は GAS に直接
@@ -109,7 +114,11 @@ function resumePending(){
   say("続きを実行しています…");
   if (p.mode === "admin"){
     MODE = "admin"; $("hdr_t").textContent = "管理メニュー"; $("user_ui").style.display = "none";
-    api(p.action, p.payload).then(renderAdmin).catch(function(e){ say("エラー: " + e.message); });
+    // liff_admin_ops の応答は管理状態ではない（message だけ）ので、そのまま描かず読み直す
+    api(p.action, p.payload).then(function(st){
+      if (p.action === "liff_admin_ops"){ say((st && st.message) || "続きを実行しました"); refreshAdmin(); }
+      else renderAdmin(st);
+    }, function(e){ say("エラー: " + e.message); });
   } else {
     api(p.action, p.payload).then(function(st){ render(st); if (st && st.done) showDone(st); }).catch(function(e){ say("エラー: " + e.message); });
   }
@@ -1329,9 +1338,10 @@ function voiceSave(row, op, arg, done){
   able(false); // 送信中は同じ行のボタンを押せなくする
   row.style.display = "none";
   voiceOut("保存中…");
+  // 2引数の then（成功のあとの例外で、たたんだ行を戻してしまわないように）
   api("liff_admin_ops", { op: op, arg: arg })
-    .then(function(){ voiceOut(done); voiceCheckLeft(); })
-    .catch(function(e){ row.style.display = ""; able(true); voiceOut("保存できませんでした: " + e.message, true); });
+    .then(function(){ voiceOut(done); voiceCheckLeft(); },
+          function(e){ row.style.display = ""; able(true); voiceOut("保存できませんでした: " + e.message, true); });
 }
 
 // たたんだ結果、要確認が残っていなければその旨を出す
@@ -1342,12 +1352,8 @@ function voiceCheckLeft(){
 }
 
 // ---- 管理: 📰最新情報（★ピックアップ／○載せる／×載せない を押して決める）----
-// 押した瞬間に見た目と手元の状態を書き換え、保存は裏で行う（失敗したら元に戻す）
+// 押した瞬間に見た目と手元の状態を書き換え、押した分は最後の押下から NW_WAIT ミリ秒後に1回にまとめて送る
 var NW_NOTE_DONE = false;
-var NW_QUEUE = {};   // まだ送っていない押下（記事ID -> 値。同じ行を何度押しても最後の値だけ）
-var NW_BEFORE = {};  // 押す前の値（保存できなかったら戻す）
-var NW_TIMER = null, NW_SENDING = false;
-var NW_WAIT = 700;   // 最後に押してからこれだけ待って、まとめて1回送る
 function renderNewsAdmin(st){
   var box = $("nw_admin"); if (!box) return;
   var v = st.news || { items: [], note: "", lastCollected: "" };
@@ -1356,6 +1362,8 @@ function renderNewsAdmin(st){
   box.innerHTML = "";
   var group = "";
   (v.items || []).forEach(function(it){
+    // 保存済みの値は、写し（最大10分遅れ）が追いつくまで手元の値を上に置く。追いついたら覚えを消す
+    if (it.id in NW_DONE){ if (it.pick === NW_DONE[it.id]) delete NW_DONE[it.id]; else it.pick = NW_DONE[it.id]; }
     if (it.group !== group){ group = it.group; box.appendChild(el("div", "nwa-g", group || "その他")); }
     var row = el("div", "nwa" + (it.pick === "★" ? " on" : it.pick === "×" ? " off" : ""));
     row.dataset.id = it.id;
@@ -1368,6 +1376,7 @@ function renderNewsAdmin(st){
       var c = el("span", "chip btn" + (it.pick === p[0] ? " sel" : ""), p[1]);
       c.setAttribute("role", "button"); c.tabIndex = 0;
       c.onclick = function(){ setNewsPick(it.id, p[0]); };
+      c.onkeydown = function(ev){ if (ev.key === "Enter" || ev.key === " " || ev.key === "Spacebar"){ ev.preventDefault(); setNewsPick(it.id, p[0]); } };
       chips.appendChild(c);
     });
     chips.appendChild(el("span", "nwa-s"));
@@ -1378,6 +1387,15 @@ function renderNewsAdmin(st){
 }
 
 function newsOut(text){ var o = $("nw_out"); o.style.display = "block"; o.textContent = text; }
+
+// ==== nw:start ★／○／× の保存（tests/run.js がこの範囲だけを取り出して動かす。ここから下は $ と api と STATE しか使わない）====
+var NW_QUEUE = {};      // まだ送っていない押下（記事ID -> 値。同じ行を何度押しても最後の値だけ）
+var NW_BEFORE = {};     // 押す前の画面の値（サーバーが確認した値が無いときの巻き戻し先）
+var NW_CONFIRMED = {};  // サーバーが保存を確かめた値（巻き戻しはこちらを優先する）
+var NW_DONE = {};       // 保存済みの値。写しが追いつくまで、描き直しのときに上に置く
+var NW_TIMER = null, NW_SENDING = false;
+var NW_WAIT = 700;      // 最後に押してからこれだけ待って、まとめて1回送る
+var NW_MAX = 50;        // 1回に送る上限（サーバーの NEWS_SET_MAX と合わせる。あふれた分は次のまとまりへ）
 
 function newsItem(id){ return (((STATE || {}).news || {}).items || []).filter(function(x){ return x.id === id; })[0]; }
 
@@ -1391,7 +1409,7 @@ function newsRowNote(id, text, isError, hideMs){
   if (hideMs) setTimeout(function(){ if (s.textContent === text) s.textContent = ""; }, hideMs);
 }
 
-// 見た目と手元の状態を書き換える（送信の前後どちらからも呼ぶ）
+// 見た目と手元の状態を書き換える（押したとき・巻き戻すときの両方から呼ぶ）
 function applyNewsPick(id, value){
   var it = newsItem(id);
   if (it) it.pick = value;
@@ -1402,20 +1420,24 @@ function applyNewsPick(id, value){
   Array.prototype.forEach.call(row.querySelectorAll(".chip"), function(c){ c.classList.toggle("sel", c.textContent.indexOf(value) === 0); });
 }
 
-// 押した分を貯め、最後の押下から NW_WAIT ミリ秒後に1回だけ送る（何行押しても要求は1本）
+function nwTimer(ms){
+  if (NW_TIMER) clearTimeout(NW_TIMER);
+  NW_TIMER = (ms === null) ? null : setTimeout(flushNewsPicks, ms);
+}
+
 function setNewsPick(id, value){
-  if (!(id in NW_BEFORE)) NW_BEFORE[id] = (newsItem(id) || {}).pick || "";
+  if (!(id in NW_BEFORE)) NW_BEFORE[id] = (id in NW_CONFIRMED) ? NW_CONFIRMED[id] : ((newsItem(id) || {}).pick || "");
   NW_QUEUE[id] = value;
   applyNewsPick(id, value);
   newsRowNote(id, "保存中…");
-  if (NW_TIMER) clearTimeout(NW_TIMER);
-  NW_TIMER = setTimeout(flushNewsPicks, NW_WAIT);
+  nwTimer(NW_WAIT);
 }
 
+// 押した分をまとめて1回で送る。飛んでいる要求は常に1本、1回は NW_MAX 件まで
 function flushNewsPicks(){
-  NW_TIMER = null;
-  if (NW_SENDING) return; // 飛んでいる要求は常に1本。送信中に押された分は、終わってから送る
-  var ids = Object.keys(NW_QUEUE);
+  nwTimer(null);
+  if (NW_SENDING) return; // 送信中に押された分は、終わってから次のまとまりで送る
+  var ids = Object.keys(NW_QUEUE).slice(0, NW_MAX);
   if (!ids.length) return;
   var items = [], before = {};
   ids.forEach(function(id){
@@ -1423,40 +1445,48 @@ function flushNewsPicks(){
     before[id] = NW_BEFORE[id];
     delete NW_QUEUE[id]; delete NW_BEFORE[id];
   });
-  var rollback = function(reason){
-    ids.forEach(function(id){
-      if (id in NW_QUEUE) return; // そのあと押し直された行は、新しい値のままにする
-      applyNewsPick(id, before[id]);
-      newsRowNote(id, reason, true);
-    });
-  };
   NW_SENDING = true;
   api("liff_admin_ops", { op: "news_set", arg: { items: items } }).then(function(j){
     NW_SENDING = false;
     var bad = {};
-    (j.failed || []).forEach(function(f){ bad[f.id] = f.reason || "保存できませんでした"; });
-    ids.forEach(function(id){
-      if (bad[id]){ if (!(id in NW_QUEUE)){ applyNewsPick(id, before[id]); newsRowNote(id, bad[id], true); } }
-      else newsRowNote(id, "保存済み", false, 1500);
+    ((j && j.failed) || []).forEach(function(f){ bad[f.id] = f.reason || "保存できませんでした"; });
+    items.forEach(function(it){
+      if (bad[it.id]){ nwRollback(it.id, before[it.id], bad[it.id]); return; }
+      NW_CONFIRMED[it.id] = it.value;
+      NW_DONE[it.id] = it.value;
+      if (!(it.id in NW_QUEUE)) newsRowNote(it.id, "保存済み", false, 1500); // 送信中に押し直された行には出さない
     });
-    if (Object.keys(NW_QUEUE).length) flushNewsPicks();
-  }).catch(function(){
+    nwNext();
+  }, function(){
     NW_SENDING = false;
-    rollback("保存できませんでした。もう一度押してください");
-    if (Object.keys(NW_QUEUE).length) flushNewsPicks();
+    items.forEach(function(it){ nwRollback(it.id, before[it.id], "保存できませんでした。もう一度押してください"); });
+    nwNext();
   });
 }
+
+// 保存できなかった行を戻す。そのあと押し直された行は、新しい値のままにする
+function nwRollback(id, before, reason){
+  if (id in NW_QUEUE) return;
+  applyNewsPick(id, before);
+  if (id in NW_DONE) NW_DONE[id] = before;
+  newsRowNote(id, reason, true);
+}
+
+// 残り（送信中に押された分・NW_MAX を超えた分）があれば、次のまとまりを送る
+function nwNext(){ if (Object.keys(NW_QUEUE).length) nwTimer(0); }
+// ==== nw:end ====
 
 function saveNewsNote(){
   var b = $("nw_note_save");
   var label = b ? b.textContent : "";
   if (b){ b.disabled = true; b.textContent = "保存中…"; }
   api("liff_admin_ops", { op: "news_note_set", arg: { text: $("nw_note").value } })
-    .then(function(j){ if (b){ b.textContent = "保存しました"; setTimeout(function(){ b.disabled = false; b.textContent = label; }, 1500); } else newsOut(j.message || "保存しました"); })
-    .catch(function(e){ if (b){ b.disabled = false; b.textContent = label; } newsOut("保存できませんでした: " + e.message); });
+    .then(function(j){ if (b){ b.textContent = "保存しました"; setTimeout(function(){ b.disabled = false; b.textContent = label; }, 1500); } else newsOut(j.message || "保存しました"); },
+          function(e){ if (b){ b.disabled = false; b.textContent = label; } newsOut("保存できませんでした: " + e.message); });
 }
 
 function newsCollectNow(){
+  flushNewsPicks(); // 待っている押下を先に送る（このあと画面を読み直すため）
   newsOut("集めています…（数十秒かかります）");
   api("liff_admin_ops", { op: "news_collect_now" }).then(function(j){
     newsOut((j.message || "") + (j.text ? "\n" + j.text : "") + "\n一覧を読み直しています…");
@@ -1682,15 +1712,20 @@ function placePreview(){
 var AUTO_REFRESH_MS = 5 * 60 * 1000;
 function autoRefresh(){
   if (MODE !== "admin" || !STATE || document.hidden) return;
+  if (NW_SENDING || Object.keys(NW_QUEUE).length) return; // ★／× の保存中は、古い写しで上書きしない
   if ((DETAIL_ID !== null && DETAIL_ID !== undefined && $("case_detail").style.display !== "none") || OPEN_TEXT_KEY !== null) return;
   if (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
   KEEP_SCROLL = true;
   fastBootstrap("liff_admin_bootstrap").then(function(st){ renderAdmin(st); say("最新の情報に更新しました（" + new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }) + "）"); }).catch(function(){});
 }
 setInterval(autoRefresh, AUTO_REFRESH_MS);
-document.addEventListener("visibilitychange", function(){ if (!document.hidden && MODE === "admin" && STATE) autoRefresh(); });
+document.addEventListener("visibilitychange", function(){
+  if (document.hidden){ flushNewsPicks(); return; } // 押した直後に閉じても消えないように、先に送る
+  if (MODE === "admin" && STATE) autoRefresh();
+});
 
 function closeLiff(){
+  flushNewsPicks();
   try { liff.closeWindow(); } catch (e) { $("done").style.display = "none"; }
 }
 
