@@ -418,6 +418,11 @@ function paintChips(id, isOn, isAuto){
     c.classList.toggle("auto", !!(isAuto && isAuto(v)));
   });
 }
+// 「話を聞いてほしい」を選んだときの案内（相談の連絡は、テーマの動きのお知らせとは別の経路）
+function paintWantTalk(){
+  var b = $("v_want_talk"); if (!b) return;
+  b.style.display = V_WANT === "話を聞いてほしい" ? "block" : "none";
+}
 function paintVoiceThemes(){ paintChips("v_themes", function(t){ return V_THEMES.indexOf(t) >= 0; }, function(t){ return V_AUTO[t]; }); }
 
 // 画面に表示している「声の取り扱い」の版。HTML の #v_pv に書いた文言と同じものを送る
@@ -437,6 +442,7 @@ function setupVoiceForm(st){
   chipBox("v_want", cfg.wants || [], function(v){
     V_WANT = V_WANT === v ? "" : v;
     paintChips("v_want", function(x){ return x === V_WANT; });
+    paintWantTalk(); // 相談を選んだときだけ、連絡の扱いを選択肢の下に出す
   });
   chipBox("v_themes", cfg.themes || [], function(t){
     var i = V_THEMES.indexOf(t);
@@ -671,6 +677,7 @@ function showVoiceDone(st){
   paintVoiceThemes();
   paintChips("v_kubun", function(){ return false; });
   paintChips("v_want", function(){ return false; });
+  paintWantTalk();
   var box = $("v_done");
   box.innerHTML = "";
   box.appendChild(el("div", "t", "受け取りました（受付番号 " + dn.no + "）"));
@@ -1341,11 +1348,20 @@ function renderVoicesAdmin(st){
   var cms = v.comments || [];
   if (cms.length){
     tb.appendChild(el("div", "t", "💬 意見 " + cms.length + "件（要確認 " + cms.filter(function(c){ return c.state === "要確認"; }).length + "）"));
+    // 意見の本文と非公開理由は Cloudflare の写しに載せていない。読むときは GAS へ直接聞き直す
+    var noBody = cms.some(function(c){ return c.text === undefined; });
+    if (noBody){
+      var nb = el("div", "hint", "意見の本文と非公開理由は写しに載せていません（要確認・非公開の文が外に出ないように）。");
+      var rb = el("button", "b_sub", "本文を読む");
+      rb.onclick = function(){ refreshAdmin(); };
+      nb.appendChild(rb);
+      tb.appendChild(nb);
+    }
     cms.forEach(function(c){
       var row = el("div", "hist");
       row.appendChild(el("div", "t", c.no + "　↳ 親 " + c.parent + "　" + (c.at || "") + "　" + c.state
         + (c.likes ? "　♥ " + c.likes : "") + (c.checked ? "" : "　（点検まだ）")));
-      row.appendChild(el("div", "m", c.text));
+      row.appendChild(el("div", "m", c.text === undefined ? "（本文は「本文を読む」で取得します）" : c.text));
       if (c.why) row.appendChild(el("small", "", c.why));
       var bar = el("div", "");
       if (c.state !== "公開"){ var bp = el("button", "b_sub", "公開する"); bp.onclick = function(){ commentOp("comment_publish", c.no, "意見 " + c.no + " を公開します。よろしいですか？"); }; bar.appendChild(bp); }
@@ -1508,8 +1524,9 @@ function voiceSave(row, op, arg, done){
   row.style.display = "none";
   voiceOut("保存中…");
   // 2引数の then（成功のあとの例外で、たたんだ行を戻してしまわないように）
+  // 完了表示はサーバーの文言を優先する（配信側にも反映できたかが付いてくる）
   api("liff_admin_ops", { op: op, arg: arg })
-    .then(function(){ voiceOut(done); voiceCheckLeft(); },
+    .then(function(j){ voiceOut((j && j.message) || done); voiceCheckLeft(); },
           function(e){ row.style.display = ""; able(true); voiceOut("保存できませんでした: " + e.message, true); });
 }
 

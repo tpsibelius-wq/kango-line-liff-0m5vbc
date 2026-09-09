@@ -100,6 +100,7 @@
 
     <label>連盟にどうしてほしいですか（任意）</label>
     <div id="v_want" class="chips"></div>
+    <div class="hint" id="v_want_talk" style="display:none">担当から3日以内にこの LINE でご連絡します（下の「このテーマの動きを LINE で受け取る」とは別のご連絡です）。</div>
 
     <details id="v_more">
       <summary>詳しく書く（任意）</summary>
@@ -108,11 +109,11 @@
     </details>
 
     <div class="sub">
-      <div class="hint" style="margin-bottom:6px">送った声の原文は、連盟の担当と、要約を作る AI（Claude）が読みます。AI はネットワーク経由で処理され、担当の PC に一時保存されます。<b>問題の印が付かなかった声は、要約と件数が自動で公開されます</b>（印が付いた声だけ担当が確かめます）。<b>お名前や施設名は本文に書かないでください。</b>LINE の ID は連絡のために内部で保持します。</div>
+      <div class="hint" style="margin-bottom:6px">送った声の原文は、連盟の担当と、公開する文を作る AI（Claude）が読みます。AI はネットワーク経由で処理され、担当の PC に一時保存されます。公開するのは要約ではなく、<b>あなたが書いた言葉のまま、特定につながる語だけを伏せた抜粋</b>です（長いときは文を選んで短くします。300字まで）。<b>問題の印が付かなかった声は、担当の確認を待たずに自動で公開されます</b>（印が付いた声だけ担当が確かめます）。<b>お名前や施設名は本文に書かないでください。</b>LINE の ID は連絡のために内部で保持します。公開したあとの訂正・撤回は、この公式LINEのトークに受付番号を添えてお送りください。</div>
       <label style="font-weight:normal"><input type="checkbox" id="v_c1" style="width:auto"> ※必須　上のとおり、担当と AI が原文を読み、記録することに同意します</label>
-      <label style="font-weight:normal"><input type="checkbox" id="v_c2" style="width:auto"> 個人や施設が分からない要約と件数を公開してよい（件数に数えるのも、これに同意された声だけです）</label>
+      <label style="font-weight:normal"><input type="checkbox" id="v_c2" style="width:auto"> 特定につながる語を伏せた抜粋（本人の言葉のまま）と件数を公開してよい（件数に数えるのも、これに同意された声だけです）</label>
       <label style="font-weight:normal"><input type="checkbox" id="v_c3" style="width:auto"> このテーマの動きを LINE で受け取る</label>
-      <div class="hint">声の取り扱いの版: <span id="v_pv">v3 暫定（2026-09-09）</span></div>
+      <div class="hint">声の取り扱いの版: <span id="v_pv">v4 暫定（2026-09-09）</span></div>
     </div>
     <button id="v_send" class="join" onclick="sendVoice()">この内容で送る</button>
     <details style="margin-top:12px;font-size:12px;color:var(--muted)">
@@ -120,15 +121,16 @@
       <div style="margin-top:6px;line-height:1.7">
         ・取得する項目：区分、職場の種別、地域、テーマ、声の本文、連盟に望むこと、LINE のユーザーID<br>
         ・お名前・施設名・連絡先は取得しません<br>
-        ・読む人：静岡県看護連盟 青年部の担当者と、要約を作る AI（Claude）<br>
+        ・読む人：静岡県看護連盟 青年部の担当者と、公開する文を作る AI（Claude）<br>
         ・AI の扱い：声の本文・テーマ・区分・職場の種別を、ネットワーク経由で処理します（氏名・地域・LINE のユーザーIDは送りません）。処理のあいだ、担当の PC に一時保存されます。<b>本文に書かれた氏名・施設名はそのまま処理されます</b>ので、本文には書かないでください<br>
-        ・公開するもの：要約（個人・施設が分からない形にしたもの）と、テーマごとの件数。公開に同意された声だけが対象で、同意のない声は件数にも数えません<br>
-        ・<b>問題の印が付かなかった声は、担当の確認を待たずに要約と件数が自動で公開されます</b>。印が付いた声だけ担当が確かめます（自動公開を止める設定もあります）<br>
+        ・公開するもの：<b>抜粋</b>（あなたが書いた言葉のまま、施設名・人名など特定につながる語だけを伏せたもの。長いときは文を選んで短くします。300字まで）と、テーマごとの件数。文を報告調に書き直したり、言い換えたりはしません。公開に同意された声だけが対象で、同意のない声は件数にも数えません<br>
+        ・<b>問題の印が付かなかった声は、担当の確認を待たずに抜粋と件数が自動で公開されます</b>。印が付いた声だけ担当が確かめます（自動公開を止める設定もあります）<br>
         ・件数は、人数が少ないときは伏せて表示します<br>
+        ・公開後の訂正・撤回：この公式LINEのトークに<b>受付番号</b>（送信のあとにお知らせします）を添えてお送りください。担当が公開を止め、必要なら文を直します<br>
         ・勤務先・学校・実習先に、内容や誰が送ったかを伝えることはありません<br>
         ・保管と委託先：Google（スプレッドシート・自動処理）、LINEヤフー（メッセージの配信）<br>
         ・「このテーマの動きを LINE で受け取る」に同意された方には、そのテーマに動きがあったときだけお送りします<br>
-        ・保持期間：最後の更新から2年を目安に、本文・ユーザーID・AI の下書き・担当メモ・返信文を消します（公開した要約だけ残ります）<br>
+        ・保持期間：最後の更新から2年を目安に、本文・ユーザーID・AI の下書き・担当メモ・返信文を消します（公開した抜粋だけ残ります）<br>
         ・削除のご希望：この公式LINEにメッセージをお送りください。担当が対応します<br>
         ・この文はデモ用の暫定版です
       </div>
@@ -168,9 +170,9 @@
       <textarea id="cm_text" rows="4" maxlength="300" oninput="countComment()" placeholder="この声について、あなたの考えや現場の様子"></textarea>
       <div class="hint" id="cm_count">0 / 300字</div>
       <label>区分 ※必須</label><select id="cm_kubun"><option value="">（選択）</option></select>
-      <div class="hint" style="margin-top:8px">この意見は<b>要約せず、そのまますぐに公開されます</b>。氏名・施設名・他人のことは書かないでください。施設名や個人名が読み取れたときは、担当が確認するまで載りません。</div>
+      <div class="hint" style="margin-top:8px">この意見は<b>要約も担当の確認もせず、そのまますぐに公開されます</b>。氏名・施設名・他人のことは書かないでください。施設名・個人名・連絡先や、第三者の病歴が読み取れたときだけ、担当が確認するまで載りません。<br>公開したあと、<b>週1回、担当の PC で動く AI（Claude Code）が本文を読んで点検します</b>。LINE の ID は保持期限まで内部に保持します。<b>載せるのをやめたいとき</b>は、この公式LINEのトークに受付番号を添えてお送りください。</div>
       <label style="font-weight:normal"><input type="checkbox" id="cm_consent" style="width:auto"> ※必須　上のとおり、そのまますぐに公開されることに同意します</label>
-      <div class="hint">意見の取り扱いの版: <span id="cm_pv">v1 暫定（2026-09-09）</span></div>
+      <div class="hint">意見の取り扱いの版: <span id="cm_pv">v2 暫定（2026-09-09）</span></div>
       <button id="cm_send" class="join" onclick="sendComment()">この内容で送る</button>
       <button type="button" class="cancel" onclick="closeCommentForm()">やめる</button>
     </div>
