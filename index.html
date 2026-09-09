@@ -107,7 +107,7 @@
     </details>
 
     <div class="sub">
-      <label style="font-weight:normal"><input type="checkbox" id="v_c1" style="width:auto"> ※必須　声を連盟の担当が読み、記録することに同意します</label>
+      <label style="font-weight:normal"><input type="checkbox" id="v_c1" style="width:auto"> ※必須　声を連盟の担当が読み、記録することに同意します（要約の下書きに AI（Claude）を使います。個人や施設が分かる情報は送りません）</label>
       <label style="font-weight:normal"><input type="checkbox" id="v_c2" style="width:auto"> 個人や施設が分からない要約と件数を公開してよい</label>
       <label style="font-weight:normal"><input type="checkbox" id="v_c3" style="width:auto" checked> このテーマの動きを LINE で受け取る</label>
       <div class="hint">声の取り扱いの版: <span id="v_pv"></span></div>
@@ -120,6 +120,7 @@
         ・お名前・施設名・連絡先は取得しません<br>
         ・読む人：静岡県看護連盟 青年部の担当者（原文を読むのはこの範囲だけです）<br>
         ・公開するもの：担当が書いた要約（個人・施設が分からない形にしたもの）と、テーマごとの件数。公開に同意された声だけが対象です<br>
+        ・要約の下書きに AI（Claude）を使います。個人や施設が分かる情報は送りません（送るのは声の本文・テーマ・区分・職場の種別だけで、氏名・地域・LINE のユーザーIDは送りません）。下書きは担当が確かめてから公開します<br>
         ・件数は、人数が少ないときは伏せて表示します<br>
         ・勤務先・学校・実習先に、内容や誰が送ったかを伝えることはありません<br>
         ・保管と委託先：Google（スプレッドシート・自動処理）、LINEヤフー（メッセージの配信）<br>
@@ -462,8 +463,12 @@
   </section>
   <section class="vw" data-v="voices">
   <h2 id="sec_voices">🗣 現場の声</h2>
-  <div class="hint">要約・段階・公開は「声」シートで直します（この画面は見るだけ）。週1回、未処理を上から片づけてください</div>
+  <div class="hint">週1回、自動処理が要約の下書きを作ります。この画面では「要確認」だけを見て、公開するかを決めます</div>
+  <div id="v_ai" class="hint"></div>
   <div class="chips" id="v_buckets"></div>
+  <h2>要確認（自動処理が判断を保留したもの）</h2>
+  <div id="v_check"></div>
+  <pre id="v_check_out" class="hist" style="display:none;white-space:pre-wrap;font-family:inherit"></pre>
   <div class="panel">
     <div class="t">要約の書き方</div>
     <div class="hint" style="line-height:1.8">

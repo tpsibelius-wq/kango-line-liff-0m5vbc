@@ -1235,13 +1235,15 @@ function renderMembers(st){
     box.appendChild(row);
   });
 }
-// ---- 管理: 現場の声（件数・未処理・鮮度。直すのはスプレッドシート）----
+// ---- 管理: 現場の声（要確認の判断・件数・未処理・鮮度）----
 function renderVoicesAdmin(st){
   var v = st.voices;
   var bx = $("v_buckets"), tb = $("v_todo"), th = $("v_themes_admin");
   if (!bx || !tb || !th) return;
   if (!v){ bx.innerHTML = ""; tb.innerHTML = ""; th.innerHTML = ""; return; }
   $("v_sheet").href = st.sheetUrl || "#";
+  renderVoiceAi(v);
+  renderVoiceCheck(v);
   bx.innerHTML = "";
   (v.buckets || []).forEach(function(b){ bx.appendChild(el("span", "chip" + (b.n ? " ok" : " ng"), b.label + " " + b.n)); });
   var todoN = ((v.buckets || []).filter(function(b){ return b.key === "todo"; })[0] || {}).n || 0;
@@ -1270,6 +1272,64 @@ function renderVoicesAdmin(st){
   });
   th.appendChild(tbl);
   th.appendChild(el("div", "hint", "件数が " + v.k + " 件未満のところは、公開の盤面では数を伏せています（VOICE_K）"));
+}
+
+// 自動処理の方式と、最終自動処理日時
+function renderVoiceAi(v){
+  var box = $("v_ai"); if (!box) return;
+  var ai = v.ai || {};
+  var last = ai.last ? String(ai.last).replace("T", " ").slice(0, 16) : "";
+  var t = "自動処理: " + (ai.provider === "rules" ? "rules（GAS の中の規則）" : ai.provider === "agent" ? "agent（担当の PC の Claude Code）" : String(ai.provider || "未設定"))
+    + "／自動公開 " + (ai.autoPublish ? "on" : "off")
+    + "／最終 " + (last || "未実行");
+  box.textContent = t;
+  if (ai.provider === "agent") box.appendChild(el("div", "", "次の処理は月曜。急ぐときは担当の PC で「声処理」を実行してください"));
+}
+
+// 要確認の一覧（受付番号・テーマ・理由・下書きの要約。要約は直してから公開できる）
+function renderVoiceCheck(v){
+  var box = $("v_check"); if (!box) return;
+  box.innerHTML = "";
+  var list = v.needCheck || [];
+  if (!list.length){ box.appendChild(el("div", "hint", "要確認はありません")); return; }
+  list.forEach(function(c){
+    var row = el("div", "hist");
+    row.appendChild(el("div", "t", c.no + "　" + (c.at || "") + "　" + (c.themes || "（テーマなし）")));
+    if (c.reason) row.appendChild(el("div", "m", c.reason));
+    if (c.themeNote) row.appendChild(el("div", "m", "テーマ案: " + c.themeNote));
+    if (!c.canPublish) row.appendChild(el("div", "m", "※ 本人が公開に同意していないため、公開はできません"));
+    var ta = document.createElement("textarea");
+    ta.rows = 3; ta.value = c.summary || ""; ta.placeholder = "公開用の要約（直してから公開できます）";
+    row.appendChild(ta);
+    var btns = el("div", "chips");
+    if (c.canPublish){
+      var b1 = el("button", "", "この要約で公開");
+      b1.onclick = function(){ voicePublish(c.no, ta.value); };
+      btns.appendChild(b1);
+    }
+    var b2 = el("button", "b_abs", "公開しない");
+    b2.onclick = function(){ if (confirm("声 " + c.no + " を公開しないことにしますか？（本文は残ります）")) voiceExclude(c.no); };
+    btns.appendChild(b2);
+    row.appendChild(btns);
+    box.appendChild(row);
+  });
+}
+
+function voiceOut(text){ var o = $("v_check_out"); if (!o) return; o.style.display = "block"; o.textContent = text; }
+
+function voicePublish(no, summary){
+  if (!String(summary || "").trim()){ voiceOut("要約を入力してください"); return; }
+  voiceOut("保存中…");
+  api("liff_admin_ops", { op: "voice_publish", arg: { no: no, summary: summary } })
+    .then(function(j){ voiceOut(j.message || "公開しました"); refreshAdmin(); })
+    .catch(function(e){ voiceOut("エラー: " + e.message); });
+}
+
+function voiceExclude(no){
+  voiceOut("保存中…");
+  api("liff_admin_ops", { op: "voice_exclude", arg: { no: no } })
+    .then(function(j){ voiceOut(j.message || "公開しないことにしました"); refreshAdmin(); })
+    .catch(function(e){ voiceOut("エラー: " + e.message); });
 }
 
 // ---- 管理: 📰最新情報（★ピックアップ／○載せる／×載せない を押して決める）----
