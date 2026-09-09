@@ -196,6 +196,8 @@ table.kv td:first-child{white-space:nowrap;color:#555;width:34%}
 .nwa.off{opacity:.55}
 .nwa.off .nwa-t{text-decoration:line-through}
 .nwa .chips{margin:6px 0 0}
+.nwa-s{font-size:11.5px;color:#8a939c;margin-left:8px}
+.nwa-s.ng{color:#c62828;font-weight:700}
 .nwa-g{font-size:12px;font-weight:700;color:var(--navy);background:var(--panel);border-radius:8px;padding:4px 10px;margin:12px 0 2px}
 
 /* ---- 最新情報（web/news.js。LIFF の ?v=news と news.html で使う）----

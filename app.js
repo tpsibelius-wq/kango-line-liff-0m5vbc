@@ -1304,36 +1304,44 @@ function renderVoiceCheck(v){
     var btns = el("div", "chips");
     if (c.canPublish){
       var b1 = el("button", "", "この要約で公開");
-      b1.onclick = function(){ voicePublish(c.no, ta.value); };
+      b1.onclick = function(){ voiceSave(row, "voice_publish", { no: c.no, summary: ta.value }, c.no + " を公開しました"); };
       btns.appendChild(b1);
     }
     var b2 = el("button", "b_abs", "公開しない");
-    b2.onclick = function(){ if (confirm("声 " + c.no + " を公開しないことにしますか？（本文は残ります）")) voiceExclude(c.no); };
+    b2.onclick = function(){ if (confirm("声 " + c.no + " を公開しないことにしますか？（本文は残ります）")) voiceSave(row, "voice_exclude", { no: c.no }, c.no + " を公開しないことにしました"); };
     btns.appendChild(b2);
     row.appendChild(btns);
     box.appendChild(row);
   });
 }
 
-function voiceOut(text){ var o = $("v_check_out"); if (!o) return; o.style.display = "block"; o.textContent = text; }
-
-function voicePublish(no, summary){
-  if (!String(summary || "").trim()){ voiceOut("要約を入力してください"); return; }
-  voiceOut("保存中…");
-  api("liff_admin_ops", { op: "voice_publish", arg: { no: no, summary: summary } })
-    .then(function(j){ voiceOut(j.message || "公開しました"); refreshAdmin(); })
-    .catch(function(e){ voiceOut("エラー: " + e.message); });
+function voiceOut(text, isError){
+  var o = $("v_check_out"); if (!o) return;
+  o.style.display = "block"; o.style.color = isError ? "#c62828" : "";
+  o.textContent = text;
 }
 
-function voiceExclude(no){
+// 押した行をその場でたたみ、保存は裏で行う（失敗したら戻す）。全体の読み直しはしない
+function voiceSave(row, op, arg, done){
+  if (op === "voice_publish" && !String(arg.summary || "").trim()){ voiceOut("要約を入力してください", true); return; }
+  row.style.display = "none";
   voiceOut("保存中…");
-  api("liff_admin_ops", { op: "voice_exclude", arg: { no: no } })
-    .then(function(j){ voiceOut(j.message || "公開しないことにしました"); refreshAdmin(); })
-    .catch(function(e){ voiceOut("エラー: " + e.message); });
+  api("liff_admin_ops", { op: op, arg: arg })
+    .then(function(){ voiceOut(done); voiceCheckLeft(); })
+    .catch(function(e){ row.style.display = ""; voiceOut("保存できませんでした: " + e.message, true); });
+}
+
+// たたんだ結果、要確認が残っていなければその旨を出す
+function voiceCheckLeft(){
+  var box = $("v_check"); if (!box) return;
+  var left = Array.prototype.filter.call(box.children, function(x){ return x.style.display !== "none"; });
+  if (!left.length) box.appendChild(el("div", "hint", "要確認はありません"));
 }
 
 // ---- 管理: 📰最新情報（★ピックアップ／○載せる／×載せない を押して決める）----
+// 押した瞬間に見た目と手元の状態を書き換え、保存は裏で行う（失敗したら元に戻す）
 var NW_NOTE_DONE = false;
+var NW_SAVE = {}; // 記事ID -> { sending: 送信中か, next: 次に送る値, before: 押す前の値 }
 function renderNewsAdmin(st){
   var box = $("nw_admin"); if (!box) return;
   var v = st.news || { items: [], note: "", lastCollected: "" };
@@ -1356,6 +1364,7 @@ function renderNewsAdmin(st){
       c.onclick = function(){ setNewsPick(it.id, p[0]); };
       chips.appendChild(c);
     });
+    chips.appendChild(el("span", "nwa-s"));
     row.appendChild(chips);
     box.appendChild(row);
   });
@@ -1364,23 +1373,61 @@ function renderNewsAdmin(st){
 
 function newsOut(text){ var o = $("nw_out"); o.style.display = "block"; o.textContent = text; }
 
+function newsItem(id){ return (((STATE || {}).news || {}).items || []).filter(function(x){ return x.id === id; })[0]; }
+
+// 行の右端に出す小さな知らせ（保存中…／保存済み／失敗）
+function newsRowNote(id, text, isError, hideMs){
+  var box = $("nw_admin"); if (!box) return;
+  var row = box.querySelector('[data-id="' + id + '"]'); if (!row) return;
+  var s = row.querySelector(".nwa-s"); if (!s) return;
+  s.className = "nwa-s" + (isError ? " ng" : "");
+  s.textContent = text;
+  if (hideMs) setTimeout(function(){ if (s.textContent === text) s.textContent = ""; }, hideMs);
+}
+
+// 見た目と手元の状態を書き換える（送信の前後どちらからも呼ぶ）
+function applyNewsPick(id, value){
+  var it = newsItem(id);
+  if (it) it.pick = value;
+  var box = $("nw_admin"); if (!box) return;
+  var row = box.querySelector('[data-id="' + id + '"]'); if (!row) return;
+  row.classList.toggle("on", value === "★");
+  row.classList.toggle("off", value === "×");
+  Array.prototype.forEach.call(row.querySelectorAll(".chip"), function(c){ c.classList.toggle("sel", c.textContent.indexOf(value) === 0); });
+}
+
 function setNewsPick(id, value){
-  newsOut("保存中…");
-  api("liff_admin_ops", { op: "news_set", arg: { id: id, value: value } }).then(function(j){
-    newsOut(j.message || "保存しました");
-    var row = $("nw_admin").querySelector('[data-id="' + id + '"]');
-    if (!row) return;
-    row.classList.toggle("on", value === "★");
-    row.classList.toggle("off", value === "×");
-    Array.prototype.forEach.call(row.querySelectorAll(".chip"), function(c){ c.classList.toggle("sel", c.textContent.indexOf(value) === 0); });
-  }).catch(function(e){ newsOut("エラー: " + e.message); });
+  var st = NW_SAVE[id] || (NW_SAVE[id] = { sending: false, next: null, before: (newsItem(id) || {}).pick || "" });
+  applyNewsPick(id, value);
+  if (st.sending){ st.next = value; return; } // 送信中は最後に押した値だけを覚えて、終わってから送る
+  sendNewsPick(id, value);
+}
+
+function sendNewsPick(id, value){
+  var st = NW_SAVE[id];
+  st.sending = true;
+  st.next = null;
+  newsRowNote(id, "保存中…");
+  api("liff_admin_ops", { op: "news_set", arg: { id: id, value: value } }).then(function(){
+    st.sending = false;
+    if (st.next !== null && st.next !== value){ sendNewsPick(id, st.next); return; }
+    delete NW_SAVE[id];
+    newsRowNote(id, "保存済み", false, 1500);
+  }).catch(function(){
+    var before = st.before;
+    delete NW_SAVE[id];
+    applyNewsPick(id, before); // 元に戻す
+    newsRowNote(id, "保存できませんでした。もう一度押してください", true);
+  });
 }
 
 function saveNewsNote(){
-  newsOut("保存中…");
+  var b = $("nw_note_save");
+  var label = b ? b.textContent : "";
+  if (b){ b.disabled = true; b.textContent = "保存中…"; }
   api("liff_admin_ops", { op: "news_note_set", arg: { text: $("nw_note").value } })
-    .then(function(j){ newsOut(j.message || "保存しました"); })
-    .catch(function(e){ newsOut("エラー: " + e.message); });
+    .then(function(j){ if (b){ b.textContent = "保存しました"; setTimeout(function(){ b.disabled = false; b.textContent = label; }, 1500); } else newsOut(j.message || "保存しました"); })
+    .catch(function(e){ if (b){ b.disabled = false; b.textContent = label; } newsOut("保存できませんでした: " + e.message); });
 }
 
 function newsCollectNow(){
