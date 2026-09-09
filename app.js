@@ -1436,11 +1436,12 @@ function renderVoiceCheck(v){
     if (c.themeNote) row.appendChild(el("div", "m", "テーマ案: " + c.themeNote));
     if (!c.canPublish) row.appendChild(el("div", "m", "※ 本人が公開に同意していないため、公開はできません"));
     var ta = document.createElement("textarea");
-    ta.rows = 3; ta.value = c.summary || ""; ta.placeholder = "公開用の要約（直してから公開できます）";
+    ta.rows = 4; ta.value = c.summary || ""; ta.maxLength = 300;
+    ta.placeholder = "公開する文（本人の言葉のまま。特定につながる語だけ伏せる。直してから公開できます）";
     row.appendChild(ta);
     var btns = el("div", "chips");
     if (c.canPublish){
-      var b1 = el("button", "", "この要約で公開");
+      var b1 = el("button", "", "この文で公開");
       b1.onclick = function(){ voiceSave(row, "voice_publish", { no: c.no, summary: ta.value }, c.no + " を公開しました"); };
       btns.appendChild(b1);
     }

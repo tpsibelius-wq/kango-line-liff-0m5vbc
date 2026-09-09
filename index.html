@@ -11,7 +11,7 @@
 <link rel="icon" href="assets/favicon.svg"><link rel="apple-touch-icon" href="assets/icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=202609091328">
+<link rel="stylesheet" href="styles.css?v=202609091402">
 </head>
 <body>
 <header id="hdr"><img src="assets/logo.svg" alt="静岡県看護連盟" class="hlogo"><span id="hdr_t">公式LINE</span></header>
@@ -74,7 +74,7 @@
   <h2 id="hist_h">あなたの申込状況</h2><div id="hist"></div>
   <section id="voice_ui" class="panel" style="display:none">
     <div class="t">現場の声を聞かせてください</div>
-    <div class="m vlead">話すだけで送れます。誤変換はそのままで構いません。<br>原文は連盟の担当だけが読み、公開するのは要約と件数だけです。</div>
+    <div class="m vlead">話すだけで送れます。誤変換はそのままで構いません。<br>原文は連盟の担当と、要約を作る AI が読みます。公開するのは、特定につながる語を伏せた本人の言葉と件数だけです。</div>
 
     <button type="button" id="v_mic" class="micbtn" onclick="toggleVoiceMic()">🎤 話して入力</button>
     <div class="mic-ok">言い間違いや変換の誤りは、そのままで大丈夫です。前後の文脈から読み取ります。</div>
@@ -157,7 +157,7 @@
   </section>
   <section id="map_ui" style="display:none">
     <div class="t">届いた声</div>
-    <div class="m vlead">公式LINE に届いた現場の声を、テーマごとにまとめています。<br>公開しているのは、個人や施設が分からない形にした要約と件数だけです。</div>
+    <div class="m vlead">公式LINE に届いた現場の声を、テーマごとにまとめています。<br>公開しているのは、特定につながる語を伏せた本人の言葉と、件数だけです。</div>
     <div id="vb_wrap"></div>
 
     <div class="panel" id="cm_box" style="display:none;margin-top:12px">
@@ -490,19 +490,19 @@
   <h2>要確認（自動処理が判断を保留したもの）</h2>
   <div id="v_check"></div>
   <pre id="v_check_out" class="hist" style="display:none;white-space:pre-wrap;font-family:inherit"></pre>
-  <h2 style="margin-top:16px">📣 公開している要約と「連盟から」</h2>
-  <div class="hint">公開ページの各要約の下に出る一言です（200字まで）。空にして保存すると消えます</div>
+  <h2 style="margin-top:16px">📣 公開している文と「連盟から」</h2>
+  <div class="hint">公開ページの各文の下に出る一言です（200字まで）。空にして保存すると消えます</div>
   <div id="v_pub"></div>
   <div class="panel">
-    <div class="t">要約の書き方</div>
+    <div class="t">公開する文の書き方</div>
     <div class="hint" style="line-height:1.8">
-      1. 氏名・施設名・部署・日付・人数を消す（「◯◯病院の3階病棟」→「ある病院の病棟」）<br>
-      2. 何に困っているかを1文にする（言い換えず、書かれた言葉を残す）<br>
-      3. 断定できないことは書かない（「〜という声」で止める）
+      1. <b>本人の言葉のまま</b>載せる（一人称も語尾もそのまま。「〜という声」と言い換えない）<br>
+      2. <b>特定につながる語だけ伏せる</b>（「◯◯病院の3階病棟」→「ある病院の病棟」、「師長」→「上司」、「沼津市」→「県内」）<br>
+      3. 長ければ<b>文を選んで短く</b>する（前後を落とすだけ。文の中は直さない。300字まで）
     </div>
     <a id="v_sheet" class="sheet" target="_blank" rel="noopener">▶ スプレッドシートで直す（「声」シート）</a>
   </div>
-  <h2>未処理（段階が「届いた」で、公開用要約がまだ）</h2>
+  <h2>未処理（段階が「届いた」で、公開する文がまだ）</h2>
   <div id="v_todo"></div>
   <h2>テーマ別の件数と鮮度</h2>
   <div id="v_themes_admin"></div>
@@ -587,7 +587,7 @@
 </div>
 <div id="dbg" style="font-size:10px;color:#999;margin-top:20px;word-break:break-all"></div>
 </div>
-<script src="config.js?v=202609091328"></script>
+<script src="config.js?v=202609091402"></script>
 <script>
 // LINEの部品の読込を待たずに、イベント一覧だけの写し（個人情報なし）を先に取りに行く
 var WORKER = (window.SITE_CONFIG || {}).WORKER || "";
@@ -597,8 +597,8 @@ try {
 } catch (e) {}
 </script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<script src="voices.js?v=202609091328"></script>
-<script src="news.js?v=202609091328"></script>
-<script src="app.js?v=202609091328"></script>
+<script src="voices.js?v=202609091402"></script>
+<script src="news.js?v=202609091402"></script>
+<script src="app.js?v=202609091402"></script>
 </body>
 </html>

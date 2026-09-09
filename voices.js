@@ -1,6 +1,6 @@
 // 公開ページ「届いた声」。LIFF の中（index.html の ?v=map）と、LINEの外から見る voices.html の両方が読む。
 // 見せるのは「どんな声がどれだけ届いているか」だけ。段階（届いた→変わった）は内部の管理用なので出さない。
-// データは GAS の ?action=voice_public（鍵なし・要約と件数だけ）。window.VOICE_SAMPLE があればそれを使う（ローカルでの見た目確認）
+// データは GAS の ?action=voice_public（鍵なし・匿名化した本文と件数だけ）。window.VOICE_SAMPLE があればそれを使う（ローカルでの見た目確認）
 (function (global) {
   "use strict";
 
@@ -93,7 +93,7 @@
     }
 
     var foot = elm("div", "vb-foot");
-    foot.textContent = "公開しているのは、個人や施設が分からない形にした要約と件数だけです。原文は連盟の担当だけが読みます。"
+    foot.textContent = "公開しているのは、特定につながる語（施設名・人名・地名・日付など）を伏せた本人の言葉と、件数だけです。原文は連盟の担当と、要約を作る AI が読みます。"
       + (data.at ? "（" + String(data.at).slice(0, 10) + " 時点）" : "");
     wrap.appendChild(foot);
 
@@ -116,9 +116,9 @@
 
     box.appendChild(elm("div", "vb-dt", t.theme));
     box.appendChild(elm("div", "vb-sub", "届いた声 " + countText(t.total, data.k)));
-    box.appendChild(elm("h3", "vb-h", "届いた声（公開できる要約）"));
+    box.appendChild(elm("h3", "vb-h", "届いた声"));
     if (!(t.summaries || []).length) {
-      box.appendChild(elm("div", "vb-empty", "公開できる要約はまだありません。公開してよいと答えていただいた声だけを、要約にして載せています"));
+      box.appendChild(elm("div", "vb-empty", "公開できる声はまだありません。公開してよいと答えていただいた声だけを、特定につながる語を伏せて載せています"));
       return;
     }
     var act = global.VOICE_ACTIONS || null; // LINE の中（LIFF）だけ。単独ページでは null＝表示のみ
