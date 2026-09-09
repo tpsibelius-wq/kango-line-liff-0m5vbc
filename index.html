@@ -391,8 +391,11 @@
       <label>きっかけ</label><select id="m_kikkake"><option value="">（選択）</option></select>
       <label>ご紹介者</label><input id="m_shokai" list="member_names">
       <label>同伴者のお名前</label><input id="m_dohan">
-      <label>メモ（受付した担当名など）</label><input id="m_memo">
+      <label>メモ（受付の経緯など）</label><input id="m_memo">
       </details>
+      <label style="display:block;margin-top:8px"><input type="checkbox" id="m_consent"> 本人に個人情報の取り扱いを説明し、口頭で同意を確認した ※必須</label>
+      <label>確認した担当のお名前 ※必須</label><input id="m_consent_by" list="member_names">
+      <label style="display:block;margin-top:6px"><input type="checkbox" id="m_force"> 定員・締切を超えるが、例外として受け付ける（記録に残ります）</label>
       <button type="button" onclick="adminAddApply()" style="background:var(--navy);color:#fff;width:100%;margin-top:8px">この内容で申込を追加する</button>
     </div>
 
@@ -540,10 +543,12 @@
     <button type="button" class="b_sub" onclick="adminOps('version')">コード版・最終実行</button>
     <button type="button" class="b_sub" onclick="adminOps('backup')">バックアップを今取る</button>
     <button type="button" class="b_sub" onclick="adminOps('retention_check')">保持期間の確認</button>
-    <button type="button" class="b_sub" onclick="adminOps('retention_purge', '保持期間を過ぎた友だちを匿名化します（氏名・連絡先・LINE_userId・メモ。元に戻せません）。実行しますか？')">匿名化を実行</button>
+    <button type="button" class="b_sub" onclick="adminOps('retention_purge', '保持期間を過ぎた友だちと、その人の申込の記録・声の本文を匿名化します（氏名・区分・連絡先・同伴者・LINE_userId・メモ。元に戻せません）。実行しますか？')">匿名化を実行</button>
     <button type="button" class="b_sub" onclick="adminOps('health_run')">外形監視を今実行</button>
     <button type="button" class="b_sub" onclick="adminOps('webhook')">Webhook URL を表示</button>
+    <button type="button" class="b_sub" id="ops_resend" style="display:none" onclick="adminOps('resend', '前回届かなかった宛先にだけ、同じ本文をもう一度送ります。よろしいですか？')">失敗分を再送</button>
   </div>
+  <div id="ops_resend_note" class="hint" style="display:none"></div>
   <pre id="ops_out" class="hist" style="display:none;white-space:pre-wrap;margin-top:8px;font-family:inherit"></pre>
 
   <h2 id="sec_ref">📱 自分の紹介QR・紹介文</h2>
