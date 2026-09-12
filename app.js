@@ -1571,6 +1571,10 @@ function renderNewsAdmin(st){
     });
     chips.appendChild(el("span", "nwa-s"));
     row.appendChild(chips);
+    var send = el("button", "b_sub", "この投稿を配信");
+    send.type = "button";
+    send.onclick = function(){ newsToNotice(it); };
+    row.appendChild(send);
     box.appendChild(row);
   });
   if (!(v.items || []).length) box.appendChild(el("div", "hint", "まだ記事がありません。「いま収集する」を押してください（数十秒かかります）"));
@@ -1682,6 +1686,34 @@ function newsCollectNow(){
     newsOut((j.message || "") + (j.text ? "\n" + j.text : "") + "\n一覧を読み直しています…");
     refreshAdmin();
   }).catch(function(e){ newsOut("エラー: " + e.message); });
+}
+
+// 記事を「📣 お知らせを配信する」の下書きに入れて、そのフォームへ移す。
+// 送信はしない（宛先を選んで「この宛先に配信する」を押すのは担当）
+function newsToNotice(it){
+  $("nt_text").value = [it.title, it.url].filter(Boolean).join("\n");
+  $("nt_img").value = it.image || "";
+  countNotice();
+  KEEP_SCROLL = true; // 画面の先頭でなく、📣お知らせの見出しまで動かす
+  showView("texts");
+  var sec = $("sec_notice");
+  if (sec && sec.scrollIntoView) sec.scrollIntoView({ block: "start" });
+  say("お知らせの下書きに入れました。宛先を選んで「この宛先に配信する」を押してください（まだ送っていません）");
+}
+
+// 📷 Instagram の長期トークンを保存する（入れた値は画面にも残さない）
+function saveIgToken(){
+  var inp = $("ig_token"), out = $("ig_out");
+  out.style.display = "block"; out.textContent = "保存中…";
+  api("liff_admin_ops", { op: "ig_token_set", arg: inp.value.trim() })
+    .then(function(j){ inp.value = ""; out.textContent = j.message || "保存しました"; })
+    .catch(function(e){ out.textContent = "エラー: " + e.message; });
+}
+function igCheck(){
+  var out = $("ig_out"); out.style.display = "block"; out.textContent = "確認中…";
+  api("liff_admin_ops", { op: "ig_check" })
+    .then(function(j){ out.textContent = j.text || ""; })
+    .catch(function(e){ out.textContent = "エラー: " + e.message; });
 }
 
 function openNewsPage(){

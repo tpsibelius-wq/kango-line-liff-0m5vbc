@@ -10,8 +10,9 @@
     "組織内候補の議員から": "g-diet",
     "連盟・協会の動画": "g-video",
     "厚労省（看護関連）": "g-gov",
+    "連盟のInstagram": "g-ig",
   };
-  var GROUP_ORDER = ["連盟・協会の新着", "組織内候補の議員から", "連盟・協会の動画", "厚労省（看護関連）"];
+  var GROUP_ORDER = ["連盟・協会の新着", "組織内候補の議員から", "連盟・協会の動画", "厚労省（看護関連）", "連盟のInstagram"];
 
   function elm(tag, cls, text) {
     var x = document.createElement(tag);
@@ -68,7 +69,7 @@
     var out = [];
     (data.sections || []).forEach(function (s) {
       (s.items || []).forEach(function (it) {
-        out.push({ date: it.date, title: it.title, url: it.url, pick: !!it.pick,
+        out.push({ date: it.date, title: it.title, url: it.url, pick: !!it.pick, image: it.image || "",
           source: s.source, group: s.group || "", video: !!s.video });
       });
     });
@@ -92,7 +93,7 @@
   function bigCard(x) {
     var card = isHttps(x.url) ? elm("a", "nw-card " + (GROUP_CLASS[x.group] || "g-fed")) : elm("div", "nw-card " + (GROUP_CLASS[x.group] || "g-fed"));
     if (card.tagName === "A") { card.href = x.url; card.target = "_blank"; card.rel = "noopener"; }
-    var thumb = x.video ? ytThumb(x.url) : "";
+    var thumb = isHttps(x.image) ? x.image : x.video ? ytThumb(x.url) : "";
     if (thumb) {
       var im = document.createElement("img");
       im.className = "nw-thumb"; im.src = thumb; im.alt = ""; im.loading = "lazy";
@@ -110,10 +111,10 @@
     return card;
   }
 
-  // 一覧の1行（題名 → 出典・日付）。動画は左に小さなサムネイル
+  // 一覧の1行（題名 → 出典・日付）。動画と、画像のある行（Instagram）は左に小さなサムネイル
   function listRow(x) {
     var row = elm("div", "nw-row");
-    var thumb = x.video ? ytThumb(x.url) : "";
+    var thumb = isHttps(x.image) ? x.image : x.video ? ytThumb(x.url) : "";
     if (thumb) {
       var im = document.createElement("img");
       im.className = "nw-row-thumb"; im.src = thumb; im.alt = ""; im.loading = "lazy";

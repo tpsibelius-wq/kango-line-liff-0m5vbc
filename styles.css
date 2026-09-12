@@ -224,10 +224,12 @@ table.kv td:first-child{white-space:nowrap;color:#555;width:34%}
 .nw-card.g-diet,.nw-list.g-diet{border-left-color:var(--navy)}
 .nw-card.g-video,.nw-list.g-video{border-left-color:var(--pink-logo)}
 .nw-card.g-gov,.nw-list.g-gov{border-left-color:#9AA6B2}
+.nw-card.g-ig,.nw-list.g-ig{border-left-color:var(--pink-deep)}
 .nw-card.g-event{border-left-color:var(--pink-deep)}
 .g-diet .nw-badge{background:var(--navy)}
 .g-video .nw-badge{background:var(--pink-logo);color:var(--ink)}
 .g-gov .nw-badge{background:#9AA6B2}
+.g-ig .nw-badge{background:var(--pink-deep)}
 .g-event .nw-badge{background:var(--pink-deep)}
 /* 一覧 */
 .nw-list{background:#fff;border:1px solid var(--line);border-left:4px solid var(--sky);border-radius:12px;

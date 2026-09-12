@@ -514,7 +514,7 @@
   </section>
   <section class="vw" data-v="news">
   <h2 id="sec_news">📰 最新情報</h2>
-  <div class="hint">★を付けた記事が、公開ページの先頭「今週のピックアップ」に大きく出ます（おすすめは3件まで。4件目からは新しい順に3件だけ出ます）。×にすると出ません。シートの「情報源」で直しても同じです</div>
+  <div class="hint">★を付けた記事が、公開ページの先頭「今週のピックアップ」に大きく出ます（おすすめは3件まで。4件目からは新しい順に3件だけ出ます）。×にすると出ません。シートの「情報源」で直しても同じです。「この投稿を配信」を押すと、その記事を📣お知らせの下書きに入れます（送信は宛先を選んでから）</div>
   <div class="sub">
     <label for="nw_note">担当から一言（公開ページの先頭に出ます。空なら出しません）</label>
     <textarea id="nw_note" rows="2" maxlength="300" placeholder="例: 9/20 の意見交換会、まだ席があります"></textarea>
@@ -591,6 +591,18 @@
   </div>
   <div id="ops_resend_note" class="hint" style="display:none"></div>
   <pre id="ops_out" class="hist" style="display:none;white-space:pre-wrap;margin-top:8px;font-family:inherit"></pre>
+
+  <h2 id="sec_ig">📷 Instagram の取り込み</h2>
+  <div class="hint">連盟の Instagram の投稿・リールを「📰 最新情報」に自動で取り込みます（ストーリーズは取れません）。Meta で発行した長期トークンを貼ってください。入れた値は表示しません。60日で切れる前に自動で延長します。手順は README の「Instagram の取り込み」</div>
+  <div class="panel">
+    <label for="ig_token">アクセストークン（IG_ACCESS_TOKEN）</label>
+    <input id="ig_token" type="password" autocomplete="off" placeholder="Meta の「Generate token」で出た文字列">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+      <button type="button" class="b_sub" onclick="saveIgToken()">トークンを保存</button>
+      <button type="button" class="b_sub" onclick="igCheck()">Instagram 接続確認</button>
+    </div>
+    <pre id="ig_out" class="hist" style="display:none;white-space:pre-wrap;margin-top:8px;font-family:inherit"></pre>
+  </div>
 
   <h2 id="sec_ref">📱 自分の紹介QR・紹介文</h2>
   <div class="panel">
