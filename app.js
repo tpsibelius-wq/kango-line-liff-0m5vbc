@@ -31,11 +31,14 @@ var VOICE_THEME_HINTS = [
   { key: "制度",         words: ["制度", "法律", "届出"] },
 ];
 
+// 利用者の書き込み（Worker が即時に受け付け、裏で GAS へ渡す）。二重実行防止の合言葉もこの一覧で付ける
+var USER_WRITES = ["liff_apply", "liff_cancel", "liff_like", "liff_comment", "liff_voice", "liff_join"];
+
 function api(action, payload){
   return READY.then(function(){
   var body = Object.assign({ action: action, token: TOKEN }, payload || {});
   // 二重実行防止の合言葉（Worker 経由でも GAS 直接でも同じ値。サーバーが6時間おぼえる）
-  var isWrite = action === "liff_apply" || action === "liff_cancel" || action === "liff_voice" || action === "liff_join" || (action.indexOf("liff_admin_") === 0 && action !== "liff_admin_bootstrap");
+  var isWrite = USER_WRITES.indexOf(action) >= 0 || (action.indexOf("liff_admin_") === 0 && action !== "liff_admin_bootstrap");
   if (isWrite) body.idem = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   var send = function(url){
     // 25秒で中断する（応答が返らないまま画面が「保存中…」で止まらないように）。中断は失敗として扱う
@@ -47,8 +50,8 @@ function api(action, payload){
       .then(function(r){ return r.json().catch(function(){ throw new Error("サーバーの応答が読めませんでした。少し待ってからもう一度お試しください"); }); })
       .then(function(j){ stop(); return j; }, function(e){ stop(); throw e; });
   };
-  // 申込・キャンセル・管理操作はWorkerが即時に受け付け、裏でGASへ渡す（配信などの結果はトークに届く）。Workerが使えないときはGASへ直接
-  var viaWorker = !!WORKER && (action === "liff_apply" || action === "liff_cancel" || (action.indexOf("liff_admin_") === 0 && action !== "liff_admin_bootstrap" && action !== "liff_admin_ops" && action !== "liff_admin_delete_event")); // 運用と削除は GAS に直接
+  // 利用者の書き込みと管理操作はWorkerが即時に受け付け、裏でGASへ渡す（受付番号・配信などの結果はトークに届く）。Workerが使えないときはGASへ直接
+  var viaWorker = !!WORKER && (USER_WRITES.indexOf(action) >= 0 || (action.indexOf("liff_admin_") === 0 && action !== "liff_admin_bootstrap" && action !== "liff_admin_ops" && action !== "liff_admin_delete_event")); // 運用と削除は GAS に直接
   var p = viaWorker
     ? send(WORKER).then(function(j){ if (j && j.error && /no snapshot|worker/.test(j.error)) throw new Error("worker"); return j; }).catch(function(){ return send(API); })
     : send(API);
@@ -486,11 +489,12 @@ function setupVoiceActions(){
   window.VOICE_ACTIONS = {
     liked: V_LIKED,
     like: function(ref, on){
+      // ハートと件数は押した瞬間に切り替わる（voices.js）。ここは記録の結果だけを返し、失敗は呼び出し側が元に戻す
       return api("liff_like", { ref: ref, on: on }).then(function(j){
         var r = (j && j.like) || {};
         if (r.liked) V_LIKED[ref] = 1; else delete V_LIKED[ref];
         return r;
-      });
+      }, function(e){ say("うまく送れませんでした（" + e.message + "）"); throw e; });
     },
     comment: function(ref, theme, parentText){ openCommentForm(ref, theme, parentText); },
   };
@@ -528,6 +532,12 @@ function sendComment(){
     $("cm_send").disabled = false;
     closeCommentForm();
     var done = st && st.commentDone;
+    // Worker が受け付けた分（pending）は、公開／要確認の判定がまだ出ていない。盤面は写しが更新されるころに1回だけ読み直す
+    if (done && done.pending){
+      say("受け付けました。数秒で公開ページに載ります（内容によっては担当の確認に回ります）");
+      setTimeout(function(){ reloadVoiceBoard($("vb_wrap")); }, 5000);
+      return;
+    }
     say((done && done.message) || "意見を送りました");
     if (done && !done.held) reloadVoiceBoard($("vb_wrap"));
   }).catch(function(e){ $("cm_send").disabled = false; say("エラー: " + e.message); });
@@ -680,8 +690,11 @@ function showVoiceDone(st){
   paintWantTalk();
   var box = $("v_done");
   box.innerHTML = "";
-  box.appendChild(el("div", "t", "受け取りました（受付番号 " + dn.no + "）"));
-  box.appendChild(el("div", "m", dn.reply
+  // Worker が受け付けた分（pending）は、受付番号がまだ決まっていない。番号は GAS の受付通知がトークに送る
+  box.appendChild(el("div", "t", dn.pending ? "受け付けました" : "受け取りました（受付番号 " + dn.no + "）"));
+  box.appendChild(el("div", "m", dn.pending
+    ? "受付番号はこの LINE のトークに届きます。"
+    : dn.reply
     ? "確認のメッセージがまもなくトークに届きます。このテーマに動きがあれば、LINEでお知らせします。"
     : "確認のメッセージがまもなくトークに届きます。"));
   var b = el("button", "join", "届いた声を見る");

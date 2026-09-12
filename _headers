@@ -1,0 +1,12 @@
+# Cloudflare Pages の応答ヘッダ。
+# JS・CSS は HTML から「?v=版番号」付きで参照しているので、端末に長く覚えさせてよい（版が変わると URL も変わる）。
+# 画像・アイコン（assets/）は版番号なしで参照しているため、差し替えるときはファイル名を変えること。
+# HTML 自体は毎回サーバーに確認する（既定のまま）。
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/qr/*
+  Cache-Control: public, max-age=86400
