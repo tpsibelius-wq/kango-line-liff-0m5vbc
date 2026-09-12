@@ -1,5 +1,5 @@
 // 公開ページ「最新情報」。LIFF の中（index.html の ?v=news）と、LINEの外から見る news.html の両方が読む。
-// 出しているのは題名・日付・リンクだけ（要約は作らない）。データは GAS の ?action=news_public（鍵なし）。
+// 出しているのは題名・日付・リンクだけ（要約は作らない）。データは Cloudflare の写し（/news）、無ければ GAS の ?action=news_public（鍵なし）。
 // window.NEWS_SAMPLE があればそれを使う（ローカルでの見た目確認）
 (function (global) {
   "use strict";
@@ -52,16 +52,21 @@
     return m ? "https://i.ytimg.com/vi/" + m[1] + "/hqdefault.jpg" : "";
   }
 
+  // Cloudflare の写し（/news）を先に読み、無い・読めないときは GAS から直接（GAS は応答に2〜5秒かかる）
   function loadPublic() {
     if (global.NEWS_SAMPLE) return Promise.resolve(global.NEWS_SAMPLE);
     var cfg = global.SITE_CONFIG || {};
-    if (!cfg.API) return Promise.reject(new Error("取得先が未設定です（config.js の API）"));
-    return fetch(cfg.API + (cfg.API.indexOf("?") >= 0 ? "&" : "?") + "action=news_public")
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
+    var urls = [];
+    if (cfg.WORKER) urls.push(String(cfg.WORKER).replace(/\/$/, "") + "/news");
+    if (cfg.API) urls.push(cfg.API + (cfg.API.indexOf("?") >= 0 ? "&" : "?") + "action=news_public");
+    if (!urls.length) return Promise.reject(new Error("取得先が未設定です（config.js の API）"));
+    var at = function (i) {
+      return fetch(urls[i]).then(function (r) { return r.json(); }).then(function (j) {
         if (!j || j.error) throw new Error((j && j.error) || "最新情報を読めませんでした");
         return j;
-      });
+      }).catch(function (e) { return i + 1 < urls.length ? at(i + 1) : Promise.reject(e); });
+    };
+    return at(0);
   }
 
   // 出典の情報を item に持たせて1本の配列にする
