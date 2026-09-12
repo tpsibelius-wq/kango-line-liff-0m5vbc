@@ -33,6 +33,10 @@
   // Cloudflare の写し（/voices）を先に読み、無い・読めないときは GAS から直接
   function loadPublic() {
     if (global.VOICE_SAMPLE) return Promise.resolve(global.VOICE_SAMPLE);
+    if (global.VOICE_PREFETCH) { // index.html が本人確認と並行して取り始めた分（1回だけ使い、以後は取り直す）
+      var pre = global.VOICE_PREFETCH; global.VOICE_PREFETCH = null;
+      return pre.then(function (j) { return j && !j.error ? j : loadPublic(); });
+    }
     var cfg = global.SITE_CONFIG || {};
     var urls = [];
     if (cfg.WORKER) urls.push(String(cfg.WORKER).replace(/\/$/, "") + "/voices");

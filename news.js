@@ -55,6 +55,10 @@
   // Cloudflare の写し（/news）を先に読み、無い・読めないときは GAS から直接（GAS は応答に2〜5秒かかる）
   function loadPublic() {
     if (global.NEWS_SAMPLE) return Promise.resolve(global.NEWS_SAMPLE);
+    if (global.NEWS_PREFETCH) { // index.html が本人確認と並行して取り始めた分（1回だけ使い、以後は取り直す）
+      var pre = global.NEWS_PREFETCH; global.NEWS_PREFETCH = null;
+      return pre.then(function (j) { return j && !j.error ? j : loadPublic(); });
+    }
     var cfg = global.SITE_CONFIG || {};
     var urls = [];
     if (cfg.WORKER) urls.push(String(cfg.WORKER).replace(/\/$/, "") + "/news");

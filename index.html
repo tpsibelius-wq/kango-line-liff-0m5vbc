@@ -626,6 +626,10 @@ var WORKER = (window.SITE_CONFIG || {}).WORKER || "";
 var PUBLIC_PROMISE = null;
 try {
   if (WORKER && !/p(?:=|%3D)admin/.test(location.search)) PUBLIC_PROMISE = fetch(WORKER + "/public").then(function(r){ return r.json(); }).catch(function(){ return null; });
+  // 届いた声・最新情報は公開データなので、本人確認を待たずに写し（/voices・/news）を先に取りに行く。voices.js / news.js が1回だけ使う
+  var pv = /[?&]v(?:=|%3D)(map|news)(?:&|$)/.exec(location.search);
+  if (WORKER && pv) window[pv[1] === "map" ? "VOICE_PREFETCH" : "NEWS_PREFETCH"] =
+    fetch(WORKER + (pv[1] === "map" ? "/voices" : "/news")).then(function(r){ return r.json(); }).catch(function(){ return null; });
 } catch (e) {}
 </script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
